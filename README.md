@@ -18,7 +18,8 @@ npx tsc --init
 
 4. Integrating TypeScript with WebPack (to run WebPack dev server)
 
-npm install --save-dev ts-loader
+npm install webpack webpack-cli webpack-dev-server ts-loader copy-webpack-plugin --save-dev
+npm install http-server --save-dev
 
 4. Install ts-node and nodemon to serve the files and monitor changes
 
@@ -32,5 +33,5 @@ Babel + Typescript: https://iamturns.com/typescript-babel/
 Creating new TS project: https://www.digitalocean.com/community/tutorials/typescript-new-project
 https://exploringjs.com/tackling-ts/ch_webpack-typescript.html
 
-
+HotLoading - Chrome not auto refreshing: https://stackoverflow.com/questions/41213215/webpack-dev-server-not-auto-reloading
 

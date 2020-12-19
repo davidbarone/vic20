@@ -5,9 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "serve": "webpack-dev-server --mode=development",
-    "build": "tsc",
-    "ts-node": "nodemon --exec ts-node src/index.ts"
+    "wpw": "webpack --watch",
+    "serve": "webpack serve",
+    "go": "start npm run wpw && start npm run serve",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -26,8 +27,13 @@
   },
   "homepage": "https://github.com/davidbarone/vic20#readme",
   "devDependencies": {
+    "copy-webpack-plugin": "^7.0.0",
+    "http-server": "^0.12.3",
     "ts-loader": "^8.0.12",
-    "typescript": "^4.1.3"
+    "typescript": "^4.1.3",
+    "webpack": "^5.11.0",
+    "webpack-cli": "^4.2.0",
+    "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {}
 }
