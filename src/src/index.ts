@@ -1,10 +1,10 @@
-import asm6502 from "./asm6502";
+import cpu6502 from "./cpu6502";
 
 declare global {
-  interface Window { asm6502: any; }
+  interface Window { cpu6502: any; }
 }
 
-window.asm6502 = asm6502 || {};
+window.cpu6502 = cpu6502 || {};
 
 
 
