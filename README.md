@@ -31,11 +31,24 @@ The project was also an excuse to learn TypeScript and Web Assembly. I've used t
 
 ## Useful links
 
+TypeScript:
+-----------
 - TypeScript Playpen: https://www.typescriptlang.org/play
 - Creating a new TypeScript project: https://www.digitalocean.com/community/tutorials/typescript-new-project
 - Setting up a TypeScript project: https://www.freecodecamp.org/news/how-to-set-up-a-typescript-project-67b427114884/
 - WebPack + TypeScript: https://exploringjs.com/tackling-ts/ch_webpack-typescript.html
 - WebPack + TypeScript: https://developerhandbook.com/webpack/webpack-typescript-from-scratch/
 - Babel + TypeScript: https://iamturns.com/typescript-babel/
+
+Vic20:
+------
+- Vic20 Wikipedia page: https://en.wikipedia.org/wiki/Commodore_VIC-20
+- Matt Dawson's excellent Vic20 emulator: https://www.mdawson.net/vic20chrome/vic20.php
+
+MOS 6502 cpu:
+-------------
+- 6502 Instruction Set Decoded: http://nparker.llx.com/a2/opcodes.html
+- NMOS 6502 OpCodes: http://www.6502.org/tutorials/6502opcodes.html
+- 
 
 
