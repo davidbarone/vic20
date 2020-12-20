@@ -1,5 +1,11 @@
-const world = 'world';
+import asm6502 from "./asm6502";
 
-export function hello(word: string = world): string {
-  return `Hello ${world}! `;
+declare global {
+  interface Window { asm6502: any; }
 }
+
+window.asm6502 = asm6502 || {};
+
+
+
+

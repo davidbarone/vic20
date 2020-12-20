@@ -1,8 +1,8 @@
 const path = require('path');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
-  entry: './src/index.ts',
+  entry: { main: path.resolve('./src/index.ts') },
   devtool: 'inline-source-map',
   module: {
     rules: [
@@ -21,10 +21,9 @@ module.exports = {
     filename: '[name]-bundle.js'
   },
   plugins: [
-    new CopyWebpackPlugin({
-      patterns: [
-        { from: "html" },
-      ],
+    new HtmlWebpackPlugin({
+      template: "./html/index.html",
+      filename: "index.html",
     }),
   ],
   devServer: {
