@@ -2,7 +2,7 @@
 // CPU Registers
 //
 // PC = program counter (16-bit)
-// SP = stack pointer (16-bit)
+// SP = stack pointer (16-bit, only 8 bits used)
 // A = accumulator (8-bit)
 // X = x-index register (8-bit)
 // Y = y-index register (8-bit)
@@ -42,36 +42,37 @@ class cpu6502 {
   // and 13 addressing modes.
   // The 56 instructions are:
   //
-  // General Instructions:
-  // ---------------------
+  // Arithmetic / Logic Instructions:
+  // --------------------------------
   // ADC - Add with carry
   // AND - Bitwise AND with accumulator
   // ASL - Arithmetic shift left
   // BIT - Test bits
-  // BRK - Break
   // CMP - Compare accumulator
   // CPX - Compare X register
   // CPY - Compare Y register
   // DEC - Decrement memory
   // EOR - Bitwise exclusive OR
   // INC - Increment memory
-  // JMP - Jump
-  // JSR - Jump to subroutine
-  // LDA - Load accumulator
-  // LDX - Load X register
-  // LDY - Load Y register
   // LSR - Logical shift right
   // NOP - No operation
   // ORA - Bitwise OR with accumulator
   // ROL - Rotate left
   // ROR - Rotate right
-  // RTI - Return from interrupt
-  // RTS - Return from subroutine
-  // SBC - Sutract with carry
+  // SBC - Subtract with carry
+  //
+  // Loading Instructions:
+  // ---------------------
+  // LDA - Load accumulator
+  // LDX - Load X register
+  // LDY - Load Y register
+  //
+  // Store Instructions:
+  // ---------------------
   // STA - Store accumulator
   // STX - Store X register
   // STY - Store Y register
-
+  //
   // Branching Instructions:
   // -----------------------
   // BPL - Branch on plus
@@ -82,6 +83,14 @@ class cpu6502 {
   // BCS - Branch on carry set
   // BNE - Branch on not equal
   // BEQ - Branch on equal
+  //
+  // Jump Instructions:
+  // ------------------
+  // JMP - Jump
+  // JSR - Jump to subroutine
+  // RTI - Return from interrupt
+  // RTS - Return from subroutine
+  // BRK - Break
   //
   // Flag Instructions:
   // ------------------
@@ -112,6 +121,11 @@ class cpu6502 {
   // PLA - Pull accumulator
   // PHP - Push P (flags)
   // PLP - Pull P (flags)
+
+  // Information on 6502 instructions:
+  // ---------------------------------
+  // https://www.masswerk.at/6502/6502_instruction_set.html
+  // http://nparker.llx.com/a2/opcodes.html
 
 
 }
