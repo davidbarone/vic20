@@ -1,16 +1,39 @@
-const world = 'world';
+// **********************************
+// CPU Registers
+//
+// PC = program counter (16-bit)
+// SP = stack pointer (16-bit)
+// A = accumulator (8-bit)
+// X = x-index register (8-bit)
+// Y = y-index register (8-bit)
+// P = processor status register (8-bit)
+// **********************************
+interface Registers {
+  PC: number;
+  SP: number;
+  A: number;
+  X: number;
+  Y: number;
+  P: number
+}
 
-	// **********************************
-  // CPU Registers
-  //
-  // PC = program counter (16-bit)
-  // SP = stack pointer (16-bit)
-  // A = accumulator (8-bit)
-  // X = x-index register (8-bit)
-  // Y = y-index register (8-bit)
-  // P = processor status register (8-bit)
-	// **********************************
-var PC, SP, A, X, Y, P;
+class cpu6502 {
+  Memory: Memory;
+  Registers: Registers;
+
+  constructor(
+    memory: Memory
+  ) {
+    this.Memory = memory;
+    this.Registers = {
+      PC: 0,
+      SP: 0,
+      A: 0,
+      X: 0,
+      Y: 0,
+      P: 0
+    }
+  }
 
   // **********************************
   // Instruction set
@@ -91,18 +114,6 @@ var PC, SP, A, X, Y, P;
   // PLP - Pull P (flags)
 
 
-var op_codes = [
-  BRK,
-];
-
-function BRK() {
-
 }
 
-function hello(word: string = world): string {
-  return `Hello ${world}!`;
-}
-
-export default {
-  hello
-};
+export default cpu6502;

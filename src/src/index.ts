@@ -6,6 +6,7 @@ declare global {
 
 window.cpu6502 = cpu6502 || {};
 
+alert(65536 >> 4);  // 4096
 
 
 
