@@ -1,51 +1,8 @@
-// **********************************
-// CPU Registers
-//
-// PC = program counter (16-bit)
-// SP = stack pointer (16-bit, only 8 bits used)
-// A = accumulator (8-bit)
-// X = x-index register (8-bit)
-// Y = y-index register (8-bit)
-// P = processor status register (8-bit)
-// **********************************
-interface Registers {
-  PC: number;
-  SP: number;
-  A: number;
-  X: number;
-  Y: number;
-  P: number
-}
-
-class cpu6502 {
-  private Memory: Memory;
-  private Registers: Registers;
-  private StackBase = 0x100; // Base of stack
-
-  constructor(
-    memory: Memory
-  ) {
-    this.Memory = memory;
-    this.Registers = {
-      PC: 0,
-      SP: 0,
-      A: 0,
-      X: 0,
-      Y: 0,
-      P: 0
-    }
-  }
-
-  reset(): void {
-    this.Registers.A = 0;
-    this.Registers.X = 0;
-    this.Registers.Y = 0;
-    this.Registers.SP = 0;
-    this.Registers.PC = 0;
-  }
-
   // **********************************
-  // Instruction set
+  //
+  // ==========
+  // Cpu6502.ts
+  // ==========
   // 
   // The 6502 has 56 different instructions and 13 addressing modes. There are 151 defined op codes.
   //
@@ -130,28 +87,8 @@ class cpu6502 {
   // PLA - Pull accumulator
   // PHP - Push P (flags)
   // PLP - Pull P (flags)
-
-  // Information on 6502 instructions:
-  // ---------------------------------
-  // https://www.masswerk.at/6502/6502_instruction_set.html
-  // http://nparker.llx.com/a2/opcodes.html
-  // http://visual6502.org/
-  // http://6502.org/
-  // http://6502.org/tutorials/
-
-	private push(value: number): void {
-		this.Memory.Write(this.StackBase + this.Registers.SP, value);
-    
-    // SP loops round 8 bits
-    this.Registers.SP = (this.Registers.SP - 1) & 0xFF;
-	}
-  
-	private pop(): number {
-		this.Registers.SP = (this.Registers.SP + 1) & 0xFF;
-		return this.Memory.Read(this.StackBase + this.Registers.SP);
-	}  
-
-  // --------------------------------------------------------------------------------------------------------------------------------------------------------
+  //
+  // =============================================================================
   // Addressing Modes (https://www.masswerk.at/6502/6502_instruction_set.html#DEX)
   // =============================================================================
   // 
@@ -184,6 +121,82 @@ class cpu6502 {
   // *** Branch offsets are signed 8-bit values, -128 ... +127, negative offsets in two's complement.
   // Page transitions may occur and add an extra cycle to the exucution.
   // --------------------------------------------------------------------------------------------------------------------------------------------------------
+  //
+  // ==============================
+  // Op Code Size
+  // ==============================
+  //
+  // - Op code = 8 bits long
+  // - Generic form = AAABBCC. AAA and CC defined the op code. BBB defines addressing mode.
+  // - Op code may require zero, one or two additional bytes for operands.
+  // - Operand stored in little-endian format.
+  //
+  // =============
+  // Bibliography:
+  // =============
+  //
+  // https://www.masswerk.at/6502/6502_instruction_set.html
+  // http://nparker.llx.com/a2/opcodes.html
+  // http://visual6502.org/
+  // http://6502.org/
+  // http://6502.org/tutorials/
+  // https://floooh.github.io/2019/12/13/cycle-stepped-6502.html
+  //
+  // **********************************
+
+class cpu6502 {
+  private Memory: Memory;
+  private Registers: Registers;
+  private StackBase = 0x100; // Base of stack
+
+  constructor(
+    memory: Memory
+  ) {
+    this.Memory = memory;
+    this.Registers = {
+      PC: 0,
+      SP: 0,
+      A: 0,
+      X: 0,
+      Y: 0,
+      P: 0
+    }
+  }
+
+  reset(): void {
+    this.Registers.A = 0;
+    this.Registers.X = 0;
+    this.Registers.Y = 0;
+    this.Registers.SP = 0;
+    this.Registers.PC = 0;
+  }
+
+	private push(value: number): void {
+		this.Memory.Write(this.StackBase + this.Registers.SP, value);
+    
+    // SP loops round 8 bits
+    this.Registers.SP = (this.Registers.SP - 1) & 0xFF;
+	}
+  
+	private pop(): number {
+		this.Registers.SP = (this.Registers.SP + 1) & 0xFF;
+		return this.Memory.Read(this.StackBase + this.Registers.SP);
+	}  
+
+  private FetchInstruction(): number {
+    let instruction = this.Memory.Read(this.Registers.PC);
+    this.Registers.PC = (this.Registers.PC++) & 0xFFFF;
+    return instruction;
+  }
+
+  // ---------------------------
+  // Executes next op code
+  // ---------------------------
+  Execute() {
+
+  }
+
+
   private opcodes6502Documented: { [key: number]: string } = {
     0x00: "BRK impl",
     0x01: "ORA X,ind",

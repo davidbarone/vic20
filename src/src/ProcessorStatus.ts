@@ -1,0 +1,47 @@
+enum ProcessorStatusFlag {
+    None = 0,
+    Carry = 1 << 0,
+    Zero = 1 << 1,
+    Interrupt = 1 << 2,
+    Decimal = 1 << 3,
+    Breakpoint = 1 << 4,
+    Overflow = 1 << 6,
+    Negative = 1 << 7,
+    All = ~(~0 << 8),
+
+}
+
+// -------------------------------
+// 6502 ProcessorStatus Register
+//
+// Bit Code Description
+// 0   C    Carry
+// 1   Z    Zero
+// 2   I    Interupt Disable
+// 3   D    Decimal
+// 4   B    Breakpoint
+// 5   -
+// 6   V    Overflow
+// 7   N    Negative
+
+class ProcessorStatus {
+    private Flags: number;
+
+    constructor(flags: number) {
+        this.Flags = flags;
+    }
+
+    IsSet(flag: ProcessorStatusFlag): Boolean {
+        return (this.Flags & flag) != 0 ? true : false;
+    }
+
+    Set(flag: ProcessorStatusFlag): void {
+        this.Flags &= flag;
+    }
+
+    Clear(flag: ProcessorStatusFlag): void {
+        this.Flags &= ~flag;
+    }
+
+
+}
