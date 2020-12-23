@@ -9,10 +9,10 @@
 // P = processor status register (8-bit)
 // **********************************
 interface Registers {
-    PC: number;
-    SP: number;
-    A: number;
-    X: number;
-    Y: number;
-    P: number
-  }
+  PC: number;
+  SP: number;
+  A: number;
+  X: number;
+  Y: number;
+  P: ProcessorStatus;
+}

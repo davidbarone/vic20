@@ -141,6 +141,7 @@
   // http://6502.org/
   // http://6502.org/tutorials/
   // https://floooh.github.io/2019/12/13/cycle-stepped-6502.html
+  // https://github.com/mattgodbolt/jsbeeb/blob/master/6502.opcodes.js
   //
   // **********************************
 
@@ -159,7 +160,7 @@ class cpu6502 {
       A: 0,
       X: 0,
       Y: 0,
-      P: 0
+      P: new ProcessorStatus(0)
     }
   }
 
@@ -446,7 +447,64 @@ class cpu6502 {
     0xFC: "NOP abs,X",
     0xFF: "ISB abs,X"
   }
- 
+
+  //#region Operations
+
+  // Force break
+  private brk() {
+
+  }  
+
+  // Clear carry flag
+  private clc() {
+    this.Registers.P.Clear(ProcessorStatusFlag.Carry);
+  }
+
+  // Clear decimal mode
+  private cld() {
+    this.Registers.P.Clear(ProcessorStatusFlag.Decimal);
+  }
+
+  // Clear interrupt disable bit
+  private cli() {
+    this.Registers.P.Clear(ProcessorStatusFlag.Interrupt);
+  }
+
+  // Clear overflow flag
+  private clv() {
+    this.Registers.P.Clear(ProcessorStatusFlag.Overflow);
+  }
+
+  // Decrement index X by one
+  private dex() {
+    this.Registers.X = (this.Registers.X - 1) & 0xFF;
+    this.Registers.P.SetNegative(this.Registers.X);
+    this.Registers.P.SetZero(this.Registers.X);
+  }
+
+  // Decrement index Y by one
+  private dey() {
+    this.Registers.Y = (this.Registers.Y - 1) & 0xFF;
+    this.Registers.P.SetNegative(this.Registers.Y);
+    this.Registers.P.SetZero(this.Registers.Y);
+  }
+
+  // Increment index X by one
+  private inx() {
+    this.Registers.X = (this.Registers.X + 1) & 0xFF;
+    this.Registers.P.SetNegative(this.Registers.X);
+    this.Registers.P.SetZero(this.Registers.X);
+  }
+
+  // Increment index Y by one
+  private iny() {
+    this.Registers.Y = (this.Registers.Y + 1) & 0xFF;
+    this.Registers.P.SetNegative(this.Registers.Y);
+    this.Registers.P.SetZero(this.Registers.Y);
+  }
+
+
+  //#endregion
 }  
 
 export default cpu6502;

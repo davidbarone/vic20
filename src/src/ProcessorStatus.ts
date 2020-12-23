@@ -31,7 +31,7 @@ class ProcessorStatus {
         this.Flags = flags;
     }
 
-    IsSet(flag: ProcessorStatusFlag): Boolean {
+    IsSet(flag: ProcessorStatusFlag): boolean {
         return (this.Flags & flag) != 0 ? true : false;
     }
 
@@ -43,5 +43,12 @@ class ProcessorStatus {
         this.Flags &= ~flag;
     }
 
+    SetZero(value: number): void {
+        value == 0 ? this.Set(ProcessorStatusFlag.Zero) : this.Clear(ProcessorStatusFlag.Zero);
+    }
+
+    SetNegative(value: number): void {
+        value < 0 ? this.Set(ProcessorStatusFlag.Negative) : this.Clear(ProcessorStatusFlag.Negative);
+    }
 
 }
