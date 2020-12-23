@@ -51,4 +51,11 @@ class ProcessorStatus {
         value < 0 ? this.Set(ProcessorStatusFlag.Negative) : this.Clear(ProcessorStatusFlag.Negative);
     }
 
+    get value(): number {
+        return this.Flags;
+    }
+
+    set value(value: number) {
+        this.Flags = value;
+    }
 }

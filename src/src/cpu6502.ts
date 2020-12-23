@@ -503,6 +503,72 @@ class cpu6502 {
     this.Registers.P.SetZero(this.Registers.Y);
   }
 
+  // No-op
+  private nop() {
+
+  }
+
+  // Push accumulator onto stack
+  private pha() {
+    this.push(this.Registers.A);
+  }
+
+  // Push processor status onto stack
+  private php() {
+    this.push(this.Registers.P.value);
+  }
+
+  // Pull accumulator from stack
+  private pla() {
+    this.Registers.A = this.pop();
+    this.Registers.P.SetNegative(this.Registers.A);
+    this.Registers.P.SetZero(this.Registers.A);
+  }
+
+  // Pull processor status from stack
+  private plp() {
+    this.Registers.P.value = this.pop();
+  }
+
+  // Transfer accumulator to index X
+  private tax() {
+    this.Registers.X = this.Registers.A;
+    this.Registers.P.SetNegative(this.Registers.X);
+    this.Registers.P.SetZero(this.Registers.X);
+  }
+
+  // Transfer accumulator to index Y
+  private tay() {
+    this.Registers.Y = this.Registers.A;
+    this.Registers.P.SetNegative(this.Registers.Y);
+    this.Registers.P.SetZero(this.Registers.Y);
+  }
+
+  // Transfer stack pointer to index X
+  private tsx() {
+    this.Registers.X = this.Registers.SP;
+    this.Registers.P.SetNegative(this.Registers.X);
+    this.Registers.P.SetZero(this.Registers.X);
+  }
+
+  // Transfer index X to accumulator
+  private txa() {
+    this.Registers.A = this.Registers.X;
+    this.Registers.P.SetNegative(this.Registers.A);
+    this.Registers.P.SetZero(this.Registers.A);
+  }
+
+  // Transfer index X to stack register
+  private txs() {
+    this.Registers.SP = this.Registers.X;
+  }
+
+  // Transfer index Y to accumulator
+  private tya() {
+    this.Registers.A = this.Registers.Y;
+    this.Registers.P.SetNegative(this.Registers.A);
+    this.Registers.P.SetZero(this.Registers.A);
+  }
 
   //#endregion
 }  
