@@ -173,7 +173,7 @@ class cpu6502 {
   }
 
 	private push(value: number): void {
-		this.Memory.Write(this.StackBase + this.Registers.SP, value);
+		this.Memory.WriteByte(this.StackBase + this.Registers.SP, value);
     
     // SP loops round 8 bits
     this.Registers.SP = (this.Registers.SP - 1) & 0xFF;
@@ -181,11 +181,11 @@ class cpu6502 {
   
 	private pop(): number {
 		this.Registers.SP = (this.Registers.SP + 1) & 0xFF;
-		return this.Memory.Read(this.StackBase + this.Registers.SP);
+		return this.Memory.ReadByte(this.StackBase + this.Registers.SP);
 	}  
 
   private FetchInstruction(): number {
-    let instruction = this.Memory.Read(this.Registers.PC);
+    let instruction = this.Memory.ReadByte(this.Registers.PC);
     this.Registers.PC = (this.Registers.PC++) & 0xFFFF;
     return instruction;
   }
@@ -449,6 +449,63 @@ class cpu6502 {
   }
 
   //#region Operations
+
+  // AND memory with accumulator
+  private and(mode: string, arg: number) {
+
+    switch (mode) {
+      case "#": // immediate
+        this.Registers.A &= arg;
+        this.Registers.P.SetNegative(this.Registers.A);
+        this.Registers.P.SetZero(this.Registers.A);
+        break;
+      case "abs": // absolute
+        var b = this.Memory.ReadByte(arg);
+        this.Registers.A &= b;
+        this.Registers.P.SetNegative(this.Registers.A);
+        this.Registers.P.SetZero(this.Registers.A);
+        break;
+      case "abs,X": // absolute + X index
+        var b = this.Memory.ReadByte(arg + this.Registers.X);
+        this.Registers.A &= b;
+        this.Registers.P.SetNegative(this.Registers.A);
+        this.Registers.P.SetZero(this.Registers.A);
+        break;
+      case "abs,Y": // absolute + Y index
+        var b = this.Memory.ReadByte(arg + this.Registers.Y);
+        this.Registers.A &= b;
+        this.Registers.P.SetNegative(this.Registers.A);
+        this.Registers.P.SetZero(this.Registers.A);
+      case "X,ind": // X-indexed, indirect
+        var b = this.Memory.ReadByte(arg + this.Registers.X);
+        this.Registers.A &= b;
+        this.Registers.P.SetNegative(this.Registers.A);
+        this.Registers.P.SetZero(this.Registers.A);
+        break;
+      case "ind,Y": // indirect, Y-indexed
+        var addr = this.Memory.ReadWord(arg) + this.Registers.Y;
+        var b = this.Memory.ReadWord(addr);
+        this.Registers.A &= b;
+        this.Registers.P.SetNegative(this.Registers.A);
+        this.Registers.P.SetZero(this.Registers.A);
+        break;
+      case "zpg": // zero page
+        var b = this.Memory.ReadByte(arg);
+        this.Registers.A &= b;
+        this.Registers.P.SetNegative(this.Registers.A);
+        this.Registers.P.SetZero(this.Registers.A);
+        break;
+      case "zpg,X": // zero page, X
+        var b = this.Memory.ReadByte(arg + this.Registers.X);
+        this.Registers.A &= b;
+        this.Registers.P.SetNegative(this.Registers.A);
+        this.Registers.P.SetZero(this.Registers.A);
+        break;
+    }
+
+    
+
+  }
 
   // Force break
   private brk() {

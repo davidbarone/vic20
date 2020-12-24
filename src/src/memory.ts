@@ -129,12 +129,19 @@ class Memory {
     }
 
     // Reads a byte of memory
-    Read(offset: number): number {
+    ReadByte(offset: number): number {
         return this.ReadFunc[offset](offset);
     }
 
+    // Reads a word of memory (little-endian)
+    ReadWord(offset: number): number {
+        var lo = this.ReadFunc[offset](offset);
+        var hi = this.ReadFunc[offset + 1](offset + 1);
+        return lo | (hi << 8);
+    }
+
     // Writes a byte of memory
-    Write(offset: number, value: number): void {
+    WriteByte(offset: number, value: number): void {
         this.WriteFunc[offset](offset, value);
     }
 
