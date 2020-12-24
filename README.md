@@ -30,6 +30,75 @@ The project was also an excuse to learn TypeScript and Web Assembly. I've used t
 - Memory
 - CPU (without timing)
 
+### CPU Emulation
+
+There are 56 instructions and 13 addressing modes on the 6502. There are 151 'defined' op codes. The table below shows the 151 documented op codes:
+
+| Inst \ Mode |   A   |  abs  | abs,X | abs,Y |   #   | impl  |  ind  | X,ind | ind,Y |  rel  |  zpg  | zpg,X | zpg,Y |
+| :---------: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+|     ADC     |       |   X   |   X   |   X   |   X   |       |       |   X   |   X   |       |   X   |   X   |       |
+|     AND     |       |   X   |   X   |   X   |   X   |       |       |   X   |   X   |       |   X   |   X   |       |
+|     ASL     |   X   |   X   |   X   |       |       |       |       |       |       |       |   X   |   X   |       |
+|     BCC     |       |       |       |       |       |       |       |       |       |   X   |       |       |       |
+|     BCS     |       |       |       |       |       |       |       |       |       |   X   |       |       |       |
+|     BEQ     |       |       |       |       |       |       |       |       |       |   X   |       |       |       |
+|     BIT     |       |   X   |       |       |       |       |       |       |       |       |   X   |       |       |
+|     BMI     |       |       |       |       |       |       |       |       |       |   X   |       |       |       |
+|     BNE     |       |       |       |       |       |       |       |       |       |   X   |       |       |       |
+|     BPL     |       |       |       |       |       |       |       |       |       |   X   |       |       |       |
+|     BRK     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     BVC     |       |       |       |       |       |       |       |       |       |   X   |       |       |       |
+|     BVS     |       |       |       |       |       |       |       |       |       |   X   |       |       |       |
+|     CLC     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     CLD     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     CLI     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     CLV     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     CMP     |       |   X   |   X   |   X   |   X   |       |       |   X   |   X   |       |   X   |   X   |       |
+|     CPX     |       |   X   |       |       |   X   |       |       |       |       |       |   X   |       |       |
+|     CPY     |       |   X   |       |       |   X   |       |       |       |       |       |   X   |       |       |
+|     DEC     |       |   X   |   X   |       |       |       |       |       |       |       |   X   |   X   |       |
+|     DEX     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     DEY     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     EOR     |       |   X   |   X   |   X   |   X   |       |       |   X   |   X   |       |   X   |   X   |       |
+|     INC     |       |   X   |   X   |       |       |       |       |       |       |       |   X   |   X   |       |
+|     INX     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     INY     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     JMP     |       |   X   |       |       |       |       |   X   |       |       |       |       |       |       |
+|     JSR     |       |   X   |       |       |       |       |       |       |       |       |       |       |       |
+|     LDA     |       |   X   |   X   |   X   |   X   |       |       |   X   |   X   |       |   X   |   X   |       |
+|     LDX     |       |   X   |       |   X   |   X   |       |       |       |       |       |   X   |       |   X   |
+|     LDY     |       |   X   |   X   |       |   X   |       |       |       |       |       |   X   |   X   |       |
+|     LSR     |   X   |   X   |   X   |       |       |       |       |       |       |       |   X   |   X   |       |
+|     NOP     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     ORA     |       |   X   |   X   |   X   |   X   |       |       |   X   |   X   |       |   X   |   X   |       |
+|     PHA     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     PHP     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     PLA     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     PLP     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     ROL     |   X   |   X   |   X   |       |       |       |       |       |       |       |   X   |   X   |       |
+|     ROR     |   X   |   X   |   X   |       |       |       |       |       |       |       |   X   |   X   |       |
+|     RTI     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     RTS     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     SBC     |       |   X   |   X   |   X   |   X   |       |       |   X   |   X   |       |   X   |   X   |       |
+|     SEC     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     SED     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     SEI     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     STA     |       |   X   |   X   |   X   |       |       |       |   X   |   X   |       |   X   |   X   |       |
+|     STX     |       |   X   |       |       |       |       |       |       |       |       |   X   |       |   X   |
+|     STY     |       |   X   |       |       |       |       |       |       |       |       |   X   |   X   |       |
+|     TAX     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     TAY     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     TSX     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     TXA     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     TXS     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+|     TYA     |       |       |       |       |       |   X   |       |       |       |       |       |       |       |
+
+
+
+
+
+
+
 ## MOS6502
 
 ## Useful links
