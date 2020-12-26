@@ -1,4 +1,37 @@
-  // **********************************
+interface OpCodeGenParams {
+  instruction: string;
+  addressMode: string;
+  operation: string;
+  affectZFlag?: boolean;
+  affectNFlag?: boolean;
+  affectVFlag?: boolean;
+  affectCFlag?: boolean;
+  CFlagFunc?: Function | null
+}
+
+class OpCodeGenRule {
+  public constructor({ instruction, addressMode, operation, affectZFlag = false, affectNFlag = false, affectVFlag = false, affectCFlag = false, CFlagFunc = null }: OpCodeGenParams) {
+    this.Instruction = instruction;
+    this.AddressMode = addressMode;
+    this.Operation = operation;
+    this.AffectCFlag = affectCFlag;
+    this.AffectNFlag = affectNFlag;
+    this.AffectVFlag = affectVFlag;
+    this.AffectZFlag = affectZFlag;
+    this.CFlagFunc = CFlagFunc;
+  }
+  public Instruction: string = "" // The 3-letter instruction
+  public AddressMode: string = "" // The address mode
+  public Operation: string = "" // The operation / logic to execute
+  public AffectZFlag?: boolean = false // Does the operation affect the zero flag?
+  public AffectNFlag: boolean = false // Does the operation affect the negative flag?
+  public AffectVFlag: boolean = false // Does the operation affect the overflow flag?
+  public AffectCFlag: boolean = false // Does the operation affect the carry flag?
+  public CFlagFunc: Function | null // Does the operation affect the negative flag?
+}
+
+
+// **********************************
   //
   // ==========
   // Cpu6502.ts
@@ -142,6 +175,9 @@
   // http://6502.org/tutorials/
   // https://floooh.github.io/2019/12/13/cycle-stepped-6502.html
   // https://github.com/mattgodbolt/jsbeeb/blob/master/6502.opcodes.js
+  // https://skilldrick.github.io/easy6502/
+  // https://sites.google.com/site/6502asembly/
+  // http://www.emulator101.com/6502-addressing-modes.html
   //
   // **********************************
 
@@ -197,24 +233,73 @@ class cpu6502 {
 
   }
 
+  private ReadMemory(addressMode: string, operand: number | null): number | null {
+    operand = operand ?? 0;
+    switch(addressMode) {
+      case "#":       // immediate
+        return operand;
+        break;
+      case "A":       // A register
+        return this.Registers.A
+        break;
+      case "abs":     // absolute
+        return this.Memory.ReadByte(operand);
+        break;
+      case "abs,X":   // absolute, X-indexed
+        return this.Memory.ReadByte(operand + this.Registers.X);
+        break;
+      case "abs,Y":   // absolute, Y-indexed
+        return this.Memory.ReadByte(operand + this.Registers.Y);
+        break;
+      case "impl":    // implied
+        return null;
+        break;
+      case "ind":     // indirect
+        return this.Memory.ReadWord(operand); // location stores a 16-bit address
+        break;
+      case "X,ind":   // X-indexed, indirect
+        let idx = this.Memory.ReadWord(operand + this.Registers.X);
+        return this.Memory.ReadByte(idx);
+        break;
+      case "ind,Y":   // Indirect, Y-indexed
+        let idy = this.Memory.ReadWord(operand);
+        return this.Memory.ReadByte(idy + this.Registers.Y);
+        break;
+      case "rel":     // relative branch / jump (relative to PC)
+        return this.Registers.PC + operand;
+        break;
+      case "zpg":     // zero page
+        return this.Memory.ReadByte(operand && 0xFF);
+        break;
+      case "zpg,X":   // zero page, X-indexed
+        return this.Memory.ReadByte((operand + this.Registers.X) && 0xFF);
+        break;
+      case "zpg,Y":   // zero page, Y-indexed
+        return this.Memory.ReadByte((operand + this.Registers.Y) && 0xFF);
+        break;
+      default:  // should not get here
+        throw new Error(`Invalid addressing mode: ${addressMode}`);
+    }
 
-  private opcodes6502Documented: { [key: number]: string } = {
-    0x00: "BRK impl",
-    0x01: "ORA X,ind",
-    0x05: "ORA zpg",
-    0x06: "ASL zpg",
-    0x08: "PHP impl",
-    0x09: "ORA #",
-    0x0A: "ASL A",
-    0x0D: "ORA abs",
-    0x0E: "ASL abs",
-    0x10: "BPL rel",
-    0x11: "ORA ind,Y",
-    0x15: "ORA zpg,X",
-    0x16: "ASL zpg,X",
-    0x18: "CLC impl",
-    0x19: "ORA abs,Y",
-    0x1D: "ORA abs,X",
+  }
+
+  private opcodes6502Documented: { [key: number]: OpCodeGenRule } = {
+    //0x00: "BRK impl",
+    0x01: new OpCodeGenRule({ instruction: "ORA", addressMode: "X,ind", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
+    0x05: new OpCodeGenRule({ instruction: "ORA", addressMode: "zpg", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
+    //0x06: "ASL zpg",
+    //0x08: "PHP impl",
+    0x09: new OpCodeGenRule({ instruction: "ORA", addressMode: "#", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
+    //0x0A: "ASL A",
+    0x0D: new OpCodeGenRule({ instruction: "ORA", addressMode: "abs", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
+    //0x0E: "ASL abs",
+    //0x10: "BPL rel",
+    0x11: new OpCodeGenRule({ instruction: "ORA", addressMode: "ind,Y", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
+    0x15: new OpCodeGenRule({ instruction: "ORA", addressMode: "zpg,X", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
+    //0x16: "ASL zpg,X",
+    //0x18: "CLC impl",
+    0x19: new OpCodeGenRule({ instruction: "ORA", addressMode: "abs,Y", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
+    0x1D: new OpCodeGenRule({ instruction: "ORA", addressMode: "abs,X", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     0x1E: "ASL abs,X",
     0x20: "JSR abs",
     0x21: "AND X,ind",
@@ -507,6 +592,28 @@ class cpu6502 {
 
   }
 
+  // arithmetic shift left
+  // shifts bits of accumulator or memory 1 bit to left. Bit 0 set to zero and bit 7
+  // moved to carry flag.
+  private shl(mode: string, arg: number) {
+    switch (mode) {
+      case "#":
+        this.Registers.A = this.Registers.P.SetCarry(this.Registers.A);
+        this.Registers.P.SetNegative(this.Registers.A);
+        this.Registers.P.SetZero(this.Registers.A);
+      case "zpg": // zero page
+        var b = this.Memory.ReadByte(arg);
+        this.Registers.A = this.Registers.P.SetCarry(this.Registers.A);
+        this.Registers.P.SetNegative(this.Registers.A);
+        this.Registers.P.SetZero(this.Registers.A);
+        break;
+
+
+    }
+
+
+  }
+
   // Force break
   private brk() {
 
@@ -628,6 +735,21 @@ class cpu6502 {
   }
 
   //#endregion
+
+
+
+  // -------------------------------
+  // CreateOpCodeFunction
+  //
+  // Creates the function to execute
+  // the op code.
+  private CreateOpCodeFunction(code: string, addressingMode: string, ) {
+
+    return new Function("cpu", "operand", code)
+
+  }
+
+
 }  
 
 export default cpu6502;

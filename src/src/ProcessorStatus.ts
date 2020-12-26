@@ -51,6 +51,16 @@ class ProcessorStatus {
         value < 0 ? this.Set(ProcessorStatusFlag.Negative) : this.Clear(ProcessorStatusFlag.Negative);
     }
 
+    // Sets the carry flag if the existing number carries into the 8th bit.
+    // The input number is ANDed with 0xFF then returned.
+    SetCarry(value: number): number {
+        this.Clear(ProcessorStatusFlag.Carry);
+        if ((value >> 8) > 0) {
+          this.Set(ProcessorStatusFlag.Carry);
+        }
+        return value & 0xFF;
+    }
+
     get value(): number {
         return this.Flags;
     }
