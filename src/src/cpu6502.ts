@@ -178,6 +178,8 @@ class OpCodeGenRule {
   // https://skilldrick.github.io/easy6502/
   // https://sites.google.com/site/6502asembly/
   // http://www.emulator101.com/6502-addressing-modes.html
+  // https://xania.org/201405/jsbeeb-emulating-a-bbc-micro-in-javascript
+  // http://www.obelisk.me.uk/6502/
   //
   // **********************************
 
@@ -288,7 +290,7 @@ class cpu6502 {
     0x01: new OpCodeGenRule({ instruction: "ORA", addressMode: "X,ind", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     0x05: new OpCodeGenRule({ instruction: "ORA", addressMode: "zpg", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     //0x06: "ASL zpg",
-    //0x08: "PHP impl",
+    0x08: new OpCodeGenRule({ instruction: "PHP", addressMode: "impl", operation: "cpu.push(this.Registers.P.value);" }),
     0x09: new OpCodeGenRule({ instruction: "ORA", addressMode: "#", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     //0x0A: "ASL A",
     0x0D: new OpCodeGenRule({ instruction: "ORA", addressMode: "abs", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
@@ -297,7 +299,7 @@ class cpu6502 {
     0x11: new OpCodeGenRule({ instruction: "ORA", addressMode: "ind,Y", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     0x15: new OpCodeGenRule({ instruction: "ORA", addressMode: "zpg,X", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     //0x16: "ASL zpg,X",
-    //0x18: "CLC impl",
+    0x18: new OpCodeGenRule({ instruction: "CLC", addressMode: "impl", operation: "cpu.Registers.P.Clear(ProcessorStatusFlag.Carry);" }),
     0x19: new OpCodeGenRule({ instruction: "ORA", addressMode: "abs,Y", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     0x1D: new OpCodeGenRule({ instruction: "ORA", addressMode: "abs,X", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     0x1E: "ASL abs,X",
@@ -306,7 +308,7 @@ class cpu6502 {
     0x24: "BIT zpg",
     0x25: "AND zpg",
     0x26: "ROL zpg",
-    0x28: "PLP impl",
+    0x28: new OpCodeGenRule({ instruction: "PLP", addressMode: "impl", operation: "cpu.Registers.P.value = cpu.pop();" }),
     0x29: "AND #",
     0x2A: "ROL A",
     0x2C: "BIT abs",
@@ -324,7 +326,7 @@ class cpu6502 {
     0x41: "EOR X,ind",
     0x45: "EOR zpg",
     0x46: "LSR zpg",
-    0x48: "PHA impl",
+    0x48: new OpCodeGenRule({ instruction: "PHA", addressMode: "impl", operation: "cpu.push(this.Registers.A);" }),
     0x49: "EOR #",
     0x4A: "LSR A",
     0x4C: "JMP abs",
@@ -334,7 +336,7 @@ class cpu6502 {
     0x51: "EOR ind,Y",
     0x55: "EOR zpg,X",
     0x56: "LSR zpg,X",
-    0x58: "CLI impl",
+    0x58: new OpCodeGenRule({ instruction: "CLI", addressMode: "impl", operation: "cpu.Registers.P.Clear(ProcessorStatusFlag.Interrupt);" }),
     0x59: "EOR abs,Y",
     0x5D: "EOR abs,X",
     0x5E: "LSR abs,X",
@@ -342,7 +344,7 @@ class cpu6502 {
     0x61: "ADC X,ind",
     0x65: "ADC zpg",
     0x66: "ROR zpg",
-    0x68: "PLA impl",
+    0x68: new OpCodeGenRule({ instruction: "PLA", addressMode: "impl", operation: "cpu.Registers.A = cpu.pop();", affectNFlag: true, affectZFlag: true }),
     0x69: "ADC #",
     0x6A: "ROR A",
     0x6C: "JMP ind",
@@ -360,7 +362,7 @@ class cpu6502 {
     0x84: "STY zpg",
     0x85: "STA zpg",
     0x86: "STX zpg",
-    0x88: "DEY impl",
+    0x88: new OpCodeGenRule({ instruction: "DEY", addressMode: "impl", operation: "cpu.Registers.Y = (cpu.Registers.Y - 1) & 0xFF;", affectNFlag: true, affectZFlag: true }),
     0x8A: "TXA impl",
     0x8C: "STY abs",
     0x8D: "STA abs",
@@ -382,7 +384,7 @@ class cpu6502 {
     0xA6: "LDX zpg",
     0xA8: "TAY impl",
     0xA9: "LDA #",
-    0xAA: "TAX impl",
+    0xAA: new OpCodeGenRule({ instruction: "TAX", addressMode: "impl", operation: "cpu.Registers.X = cpu.Registers.A;", affectZFlag: true, affectNFlag: true }),
     0xAC: "LDY abs",
     0xAD: "LDA abs",
     0xAE: "LDX abs",
@@ -391,7 +393,7 @@ class cpu6502 {
     0xB4: "LDY zpg,X",
     0xB5: "LDA zpg,X",
     0xB6: "LDX zpg,Y",
-    0xB8: "CLV impl",
+    0xB8: new OpCodeGenRule({ instruction: "CLV", addressMode: "impl", operation: "cpu.Registers.P.Clear(ProcessorStatusFlag.Overflow);" }),
     0xB9: "LDA abs,Y",
     0xBA: "TSX impl",
     0xBC: "LDY abs,X",
@@ -402,9 +404,9 @@ class cpu6502 {
     0xC4: "CPY zpg",
     0xC5: "CMP zpg",
     0xC6: "DEC zpg",
-    0xC8: "INY impl",
+    0xC8: new OpCodeGenRule({ instruction: "INY", addressMode: "impl", operation: "cpu.Registers.Y = (cpu.Registers.Y + 1) & 0xFF;", affectNFlag: true, affectZFlag: true }),
     0xC9: "CMP #",
-    0xCA: "DEX impl",
+    0xCA: new OpCodeGenRule({ instruction: "DEX", addressMode: "impl", operation: "cpu.Registers.X = (cpu.Registers.X - 1) & 0xFF;", affectNFlag: true, affectZFlag: true }),
     0xCC: "CPY abs",
     0xCD: "CMP abs",
     0xCE: "DEC abs",
@@ -412,7 +414,7 @@ class cpu6502 {
     0xD1: "CMP ind,Y",
     0xD5: "CMP zpg,X",
     0xD6: "DEC zpg,X",
-    0xD8: "CLD impl",
+    0xD8: new OpCodeGenRule({ instruction: "CLD", addressMode: "impl", operation: "cpu.Registers.P.Clear(ProcessorStatusFlag.Decimal);" }),
     0xD9: "CMP abs,Y",
     0xDD: "CMP abs,X",
     0xDE: "DEC abs,X",
@@ -421,9 +423,9 @@ class cpu6502 {
     0xE4: "CPX zpg",
     0xE5: "SBC zpg",
     0xE6: "INC zpg",
-    0xE8: "INX impl",
+    0xE8: new OpCodeGenRule({ instruction: "INX", addressMode: "impl", operation: "cpu.Registers.X = (cpu.Registers.X + 1) & 0xFF;", affectNFlag: true, affectZFlag: true }),
     0xE9: "SBC #",
-    0xEA: "NOP impl",
+    0xEA: new OpCodeGenRule({ instruction: "NOP", addressMode: "impl", operation: "" }),
     0xEC: "CPX abs",
     0xED: "SBC abs",
     0xEE: "INC abs",
@@ -619,87 +621,6 @@ class cpu6502 {
 
   }  
 
-  // Clear carry flag
-  private clc() {
-    this.Registers.P.Clear(ProcessorStatusFlag.Carry);
-  }
-
-  // Clear decimal mode
-  private cld() {
-    this.Registers.P.Clear(ProcessorStatusFlag.Decimal);
-  }
-
-  // Clear interrupt disable bit
-  private cli() {
-    this.Registers.P.Clear(ProcessorStatusFlag.Interrupt);
-  }
-
-  // Clear overflow flag
-  private clv() {
-    this.Registers.P.Clear(ProcessorStatusFlag.Overflow);
-  }
-
-  // Decrement index X by one
-  private dex() {
-    this.Registers.X = (this.Registers.X - 1) & 0xFF;
-    this.Registers.P.SetNegative(this.Registers.X);
-    this.Registers.P.SetZero(this.Registers.X);
-  }
-
-  // Decrement index Y by one
-  private dey() {
-    this.Registers.Y = (this.Registers.Y - 1) & 0xFF;
-    this.Registers.P.SetNegative(this.Registers.Y);
-    this.Registers.P.SetZero(this.Registers.Y);
-  }
-
-  // Increment index X by one
-  private inx() {
-    this.Registers.X = (this.Registers.X + 1) & 0xFF;
-    this.Registers.P.SetNegative(this.Registers.X);
-    this.Registers.P.SetZero(this.Registers.X);
-  }
-
-  // Increment index Y by one
-  private iny() {
-    this.Registers.Y = (this.Registers.Y + 1) & 0xFF;
-    this.Registers.P.SetNegative(this.Registers.Y);
-    this.Registers.P.SetZero(this.Registers.Y);
-  }
-
-  // No-op
-  private nop() {
-
-  }
-
-  // Push accumulator onto stack
-  private pha() {
-    this.push(this.Registers.A);
-  }
-
-  // Push processor status onto stack
-  private php() {
-    this.push(this.Registers.P.value);
-  }
-
-  // Pull accumulator from stack
-  private pla() {
-    this.Registers.A = this.pop();
-    this.Registers.P.SetNegative(this.Registers.A);
-    this.Registers.P.SetZero(this.Registers.A);
-  }
-
-  // Pull processor status from stack
-  private plp() {
-    this.Registers.P.value = this.pop();
-  }
-
-  // Transfer accumulator to index X
-  private tax() {
-    this.Registers.X = this.Registers.A;
-    this.Registers.P.SetNegative(this.Registers.X);
-    this.Registers.P.SetZero(this.Registers.X);
-  }
 
   // Transfer accumulator to index Y
   private tay() {
@@ -743,8 +664,16 @@ class cpu6502 {
   //
   // Creates the function to execute
   // the op code.
-  private CreateOpCodeFunction(code: string, addressingMode: string, ) {
+  private CreateOpCodeFunction(rule: OpCodeGenRule) {
 
+    let code = `
+let OPERAND = cpu.ReadMemory('${rule.AddressMode}', operand);
+${rule.Operation};
+if (${rule.AffectNFlag}) {
+
+}
+
+    `;
     return new Function("cpu", "operand", code)
 
   }
