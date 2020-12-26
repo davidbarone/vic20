@@ -5,20 +5,20 @@ interface OpCodeGenParams {
   affectZFlag?: boolean;
   affectNFlag?: boolean;
   affectVFlag?: boolean;
-  affectCFlag?: boolean;
-  CFlagFunc?: Function | null
+  CFlagFunc?: Function | null;
+  write?: boolean;
 }
 
 class OpCodeGenRule {
-  public constructor({ instruction, addressMode, operation, affectZFlag = false, affectNFlag = false, affectVFlag = false, affectCFlag = false, CFlagFunc = null }: OpCodeGenParams) {
+  public constructor({ instruction, addressMode, operation, affectZFlag = false, affectNFlag = false, affectVFlag = false, write = false, CFlagFunc = null }: OpCodeGenParams) {
     this.Instruction = instruction;
     this.AddressMode = addressMode;
     this.Operation = operation;
-    this.AffectCFlag = affectCFlag;
     this.AffectNFlag = affectNFlag;
     this.AffectVFlag = affectVFlag;
     this.AffectZFlag = affectZFlag;
     this.CFlagFunc = CFlagFunc;
+    this.Write = write;
   }
   public Instruction: string = "" // The 3-letter instruction
   public AddressMode: string = "" // The address mode
@@ -26,8 +26,8 @@ class OpCodeGenRule {
   public AffectZFlag?: boolean = false // Does the operation affect the zero flag?
   public AffectNFlag: boolean = false // Does the operation affect the negative flag?
   public AffectVFlag: boolean = false // Does the operation affect the overflow flag?
-  public AffectCFlag: boolean = false // Does the operation affect the carry flag?
   public CFlagFunc: Function | null // Does the operation affect the negative flag?
+  public Write: boolean = false;    // does instruction perform a write operation?
 }
 
 
@@ -222,6 +222,22 @@ class cpu6502 {
 		return this.Memory.ReadByte(this.StackBase + this.Registers.SP);
 	}  
 
+  // ------------------------------------
+  // Shifts a number to left or right.
+  // Carry flag receives the shifted out
+  // bit. If rotate: true, then existing
+  // carry shifted into new/empty bit.
+  // ------------------------------------
+  public rotate(value: number, shiftRight: boolean, rotate: boolean) {
+    let oldCarry = this.Registers.P.IsSet(ProcessorStatusFlag.Carry) ? 1 : 0;
+    let newCarry = shiftRight ? (value && 1) : (value >> 7);
+    let result = shiftRight ? value >> 1 : value << 1;
+    if (rotate) {
+      result = shiftRight ? (result & oldCarry << 7) : (result & oldCarry);
+    }
+    return result;
+  }
+
   private FetchInstruction(): number {
     let instruction = this.Memory.ReadByte(this.Registers.PC);
     this.Registers.PC = (this.Registers.PC++) & 0xFFFF;
@@ -235,9 +251,60 @@ class cpu6502 {
 
   }
 
+  // Gets the memory offset relating to a particular addressing mode
+  private GetMemoryOffset(addressMode: string, operand: number | null): number | null {
+    operand = operand ?? 0;
+    switch (addressMode) {
+      case "#":       // immediate
+        return null;
+        break;
+      case "A":       // A register
+        return null;
+        break;
+      case "abs":     // absolute
+        return operand;
+        break;
+      case "abs,X":   // absolute, X-indexed
+        return operand + this.Registers.X;
+        break;
+      case "abs,Y":   // absolute, Y-indexed
+        return operand + this.Registers.Y;
+        break;
+      case "impl":    // implied
+        return null;
+        break;
+      case "ind":     // indirect
+        return operand; // location stores a 16-bit address
+        break;
+      case "X,ind":   // X-indexed, indirect
+        let idx = this.Memory.ReadWord(operand + this.Registers.X);
+        return idx;
+        break;
+      case "ind,Y":   // Indirect, Y-indexed
+        let idy = this.Memory.ReadWord(operand) + this.Registers.Y;
+        return idy;
+        break;
+      case "rel":     // relative branch / jump (relative to PC)
+        return this.Registers.PC + operand;
+        break;
+      case "zpg":     // zero page
+        return operand && 0xFF;
+        break;
+      case "zpg,X":   // zero page, X-indexed
+        return (operand + this.Registers.X) && 0xFF;
+        break;
+      case "zpg,Y":   // zero page, Y-indexed
+        return (operand + this.Registers.Y) && 0xFF;
+        break;
+      default:  // should not get here
+        throw new Error(`Invalid addressing mode: ${addressMode}`);
+    }
+  }
+
   private ReadMemory(addressMode: string, operand: number | null): number | null {
     operand = operand ?? 0;
-    switch(addressMode) {
+    let offset = this.GetMemoryOffset(addressMode, operand) ?? 0;
+    switch (addressMode) {
       case "#":       // immediate
         return operand;
         break;
@@ -245,87 +312,88 @@ class cpu6502 {
         return this.Registers.A
         break;
       case "abs":     // absolute
-        return this.Memory.ReadByte(operand);
+        return this.Memory.ReadByte(offset);
         break;
       case "abs,X":   // absolute, X-indexed
-        return this.Memory.ReadByte(operand + this.Registers.X);
+        return this.Memory.ReadByte(offset);
         break;
       case "abs,Y":   // absolute, Y-indexed
-        return this.Memory.ReadByte(operand + this.Registers.Y);
+        return this.Memory.ReadByte(offset);
         break;
       case "impl":    // implied
         return null;
         break;
       case "ind":     // indirect
-        return this.Memory.ReadWord(operand); // location stores a 16-bit address
+        return this.Memory.ReadWord(offset); // location stores a 16-bit address
         break;
       case "X,ind":   // X-indexed, indirect
-        let idx = this.Memory.ReadWord(operand + this.Registers.X);
-        return this.Memory.ReadByte(idx);
+        return this.Memory.ReadByte(offset);
         break;
       case "ind,Y":   // Indirect, Y-indexed
-        let idy = this.Memory.ReadWord(operand);
-        return this.Memory.ReadByte(idy + this.Registers.Y);
+        return this.Memory.ReadByte(offset);
         break;
       case "rel":     // relative branch / jump (relative to PC)
         return this.Registers.PC + operand;
         break;
       case "zpg":     // zero page
-        return this.Memory.ReadByte(operand && 0xFF);
+        return this.Memory.ReadByte(offset);
         break;
       case "zpg,X":   // zero page, X-indexed
-        return this.Memory.ReadByte((operand + this.Registers.X) && 0xFF);
+        return this.Memory.ReadByte(offset);
         break;
       case "zpg,Y":   // zero page, Y-indexed
-        return this.Memory.ReadByte((operand + this.Registers.Y) && 0xFF);
+        return this.Memory.ReadByte(offset);
         break;
       default:  // should not get here
         throw new Error(`Invalid addressing mode: ${addressMode}`);
     }
+  }
 
+  private WriteMemory(offset: number, value: number): void {
+    this.Memory.WriteByte(offset, value);
   }
 
   private opcodes6502Documented: { [key: number]: OpCodeGenRule } = {
     //0x00: "BRK impl",
     0x01: new OpCodeGenRule({ instruction: "ORA", addressMode: "X,ind", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     0x05: new OpCodeGenRule({ instruction: "ORA", addressMode: "zpg", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
-    //0x06: "ASL zpg",
+    0x06: new OpCodeGenRule({ instruction: "ASL", addressMode: "zpg", operation: "OPERAND = rotate(OPERAND, false, false);", affectNFlag: true, affectZFlag: true, write: true }),
     0x08: new OpCodeGenRule({ instruction: "PHP", addressMode: "impl", operation: "cpu.push(this.Registers.P.value);" }),
     0x09: new OpCodeGenRule({ instruction: "ORA", addressMode: "#", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
-    //0x0A: "ASL A",
+    0x0A: new OpCodeGenRule({ instruction: "ASL", addressMode: "A", operation: "cpu.Registers.A = rotate(cpu.Registers.A, false, false);", affectNFlag: true, affectZFlag: true }),
     0x0D: new OpCodeGenRule({ instruction: "ORA", addressMode: "abs", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
-    //0x0E: "ASL abs",
+    0x0E: new OpCodeGenRule({ instruction: "ASL", addressMode: "abs", operation: "OPERAND = rotate(OPERAND, false, false);", affectNFlag: true, affectZFlag: true, write: true }),
     //0x10: "BPL rel",
     0x11: new OpCodeGenRule({ instruction: "ORA", addressMode: "ind,Y", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     0x15: new OpCodeGenRule({ instruction: "ORA", addressMode: "zpg,X", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
-    //0x16: "ASL zpg,X",
+    0x16: new OpCodeGenRule({ instruction: "ASL", addressMode: "zpg,X", operation: "OPERAND = rotate(OPERAND, false, false);", affectNFlag: true, affectZFlag: true, write: true }),
     0x18: new OpCodeGenRule({ instruction: "CLC", addressMode: "impl", operation: "cpu.Registers.P.Clear(ProcessorStatusFlag.Carry);" }),
     0x19: new OpCodeGenRule({ instruction: "ORA", addressMode: "abs,Y", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     0x1D: new OpCodeGenRule({ instruction: "ORA", addressMode: "abs,X", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
-    0x1E: "ASL abs,X",
-    0x20: "JSR abs",
+    0x1E: new OpCodeGenRule({ instruction: "ASL", addressMode: "abs,X", operation: "OPERAND = rotate(OPERAND, false, false);", affectNFlag: true, affectZFlag: true, write: true }),
+    //0x20: "JSR abs",
     0x21: new OpCodeGenRule({ instruction: "AND", addressMode: "X,ind", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
-    0x24: "BIT zpg",
+    //0x24: "BIT zpg",
     0x25: new OpCodeGenRule({ instruction: "AND", addressMode: "zpg", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
-    0x26: "ROL zpg",
+    0x26: new OpCodeGenRule({ instruction: "ROL", addressMode: "zpg", operation: "OPERAND = rotate(OPERAND, false, true);", affectNFlag: true, affectZFlag: true, write: true }),
     0x28: new OpCodeGenRule({ instruction: "PLP", addressMode: "impl", operation: "cpu.Registers.P.value = cpu.pop();" }),
     0x29: new OpCodeGenRule({ instruction: "AND", addressMode: "#", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
-    0x2A: "ROL A",
-    0x2C: "BIT abs",
+    0x2A: new OpCodeGenRule({ instruction: "ROL", addressMode: "A", operation: "cpu.Registers.A = rotate(cpu.Registers.A, false, true);", affectNFlag: true, affectZFlag: true }),
+    //0x2C: "BIT abs",
     0x2D: new OpCodeGenRule({ instruction: "AND", addressMode: "abs", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
-    0x2E: "ROL abs",
-    0x30: "BMI rel",
+    0x2E: new OpCodeGenRule({ instruction: "ROL", addressMode: "abs", operation: "OPERAND = rotate(OPERAND, false, true);", affectNFlag: true, affectZFlag: true, write: true }),
+    //0x30: "BMI rel",
     0x31: new OpCodeGenRule({ instruction: "AND", addressMode: "ind,Y", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x35: new OpCodeGenRule({ instruction: "AND", addressMode: "zpg,X", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
-    0x36: "ROL zpg,X",
-    0x38: "SEC impl",
+    0x36: new OpCodeGenRule({ instruction: "ROL", addressMode: "zpg,X", operation: "OPERAND = rotate(OPERAND, false, true);", affectNFlag: true, affectZFlag: true, write: true }),
+    //0x38: "SEC impl",
     0x39: new OpCodeGenRule({ instruction: "AND", addressMode: "abs,Y", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x3D: new OpCodeGenRule({ instruction: "AND", addressMode: "abs,X", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
-    0x3E: "ROL abs,X",
-    0x40: "RTI impl",
-    0x41: "EOR X,ind",
-    0x45: "EOR zpg",
-    0x46: "LSR zpg",
+    0x3E: new OpCodeGenRule({ instruction: "ROL", addressMode: "abs,X", operation: "OPERAND = rotate(OPERAND, false, true);", affectNFlag: true, affectZFlag: true, write: true }),
+    //0x40: "RTI impl",
+    //0x41: "EOR X,ind",
+    //0x45: "EOR zpg",
+    0x46: new OpCodeGenRule({ instruction: "LSR", addressMode: "zpg", operation: "OPERAND = rotate(OPERAND, true, false);", affectNFlag: true, affectZFlag: true, write: true }),
     0x48: new OpCodeGenRule({ instruction: "PHA", addressMode: "impl", operation: "cpu.push(this.Registers.A);" }),
     0x49: "EOR #",
     0x4A: "LSR A",
@@ -566,14 +634,20 @@ class cpu6502 {
   //
   // Creates the function to execute
   // the op code.
+  // --------------------------------
   private CreateOpCodeFunction(rule: OpCodeGenRule) {
 
     let code = `
+
 let OPERAND = cpu.ReadMemory('${rule.AddressMode}', operand);
 ${rule.Operation};
 if (${rule.AffectNFlag}) {
 
 }
+// Write
+if (${rule.Write}) {
+  cpu.WriteMemory('${rule.AddressMode}', operand);
+  }
 
     `;
     return new Function("cpu", "operand", code)
