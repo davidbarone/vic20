@@ -180,6 +180,8 @@ class OpCodeGenRule {
   // http://www.emulator101.com/6502-addressing-modes.html
   // https://xania.org/201405/jsbeeb-emulating-a-bbc-micro-in-javascript
   // http://www.obelisk.me.uk/6502/
+  // https://codegolf.stackexchange.com/questions/12844/emulate-a-mos-6502-cpu
+  // https://github.com/amensch/e6502
   //
   // **********************************
 
