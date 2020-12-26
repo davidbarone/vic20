@@ -304,23 +304,23 @@ class cpu6502 {
     0x1D: new OpCodeGenRule({ instruction: "ORA", addressMode: "abs,X", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     0x1E: "ASL abs,X",
     0x20: "JSR abs",
-    0x21: "AND X,ind",
+    0x21: new OpCodeGenRule({ instruction: "AND", addressMode: "X,ind", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x24: "BIT zpg",
-    0x25: "AND zpg",
+    0x25: new OpCodeGenRule({ instruction: "AND", addressMode: "zpg", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x26: "ROL zpg",
     0x28: new OpCodeGenRule({ instruction: "PLP", addressMode: "impl", operation: "cpu.Registers.P.value = cpu.pop();" }),
-    0x29: "AND #",
+    0x29: new OpCodeGenRule({ instruction: "AND", addressMode: "#", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x2A: "ROL A",
     0x2C: "BIT abs",
-    0x2D: "AND abs",
+    0x2D: new OpCodeGenRule({ instruction: "AND", addressMode: "abs", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x2E: "ROL abs",
     0x30: "BMI rel",
-    0x31: "AND ind,Y",
-    0x35: "AND zpg,X",
+    0x31: new OpCodeGenRule({ instruction: "AND", addressMode: "ind,Y", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
+    0x35: new OpCodeGenRule({ instruction: "AND", addressMode: "zpg,X", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x36: "ROL zpg,X",
     0x38: "SEC impl",
-    0x39: "AND abs,Y",
-    0x3D: "AND abs,X",
+    0x39: new OpCodeGenRule({ instruction: "AND", addressMode: "abs,Y", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
+    0x3D: new OpCodeGenRule({ instruction: "AND", addressMode: "abs,X", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x3E: "ROL abs,X",
     0x40: "RTI impl",
     0x41: "EOR X,ind",
@@ -363,7 +363,7 @@ class cpu6502 {
     0x85: "STA zpg",
     0x86: "STX zpg",
     0x88: new OpCodeGenRule({ instruction: "DEY", addressMode: "impl", operation: "cpu.Registers.Y = (cpu.Registers.Y - 1) & 0xFF;", affectNFlag: true, affectZFlag: true }),
-    0x8A: "TXA impl",
+    0x8A: new OpCodeGenRule({ instruction: "TXA", addressMode: "impl", operation: "cpu.Registers.A = cpu.Registers.X;", affectZFlag: true, affectNFlag: true }),
     0x8C: "STY abs",
     0x8D: "STA abs",
     0x8E: "STX abs",
@@ -372,9 +372,9 @@ class cpu6502 {
     0x94: "STY zpg,X",
     0x95: "STA zpg,X",
     0x96: "STX zpg,Y",
-    0x98: "TYA impl",
+    0x98: new OpCodeGenRule({ instruction: "TYA", addressMode: "impl", operation: "cpu.Registers.A = cpu.Registers.Y;", affectZFlag: true, affectNFlag: true }),
     0x99: "STA abs,Y",
-    0x9A: "TXS impl",
+    0x9A: new OpCodeGenRule({ instruction: "TXS", addressMode: "impl", operation: "cpu.Registers.SP = cpu.Registers.X;" }),
     0x9D: "STA abs,X",
     0xA0: "LDY #",
     0xA1: "LDA X,ind",
@@ -382,7 +382,7 @@ class cpu6502 {
     0xA4: "LDY zpg",
     0xA5: "LDA zpg",
     0xA6: "LDX zpg",
-    0xA8: "TAY impl",
+    0xA8: new OpCodeGenRule({ instruction: "TAY", addressMode: "impl", operation: "cpu.Registers.Y = cpu.Registers.A;", affectZFlag: true, affectNFlag: true }),
     0xA9: "LDA #",
     0xAA: new OpCodeGenRule({ instruction: "TAX", addressMode: "impl", operation: "cpu.Registers.X = cpu.Registers.A;", affectZFlag: true, affectNFlag: true }),
     0xAC: "LDY abs",
@@ -395,7 +395,7 @@ class cpu6502 {
     0xB6: "LDX zpg,Y",
     0xB8: new OpCodeGenRule({ instruction: "CLV", addressMode: "impl", operation: "cpu.Registers.P.Clear(ProcessorStatusFlag.Overflow);" }),
     0xB9: "LDA abs,Y",
-    0xBA: "TSX impl",
+    0xBA: new OpCodeGenRule({ instruction: "TSX", addressMode: "impl", operation: "cpu.Registers.X = cpu.Registers.SP;", affectZFlag: true, affectNFlag: true }),
     0xBC: "LDY abs,X",
     0xBD: "LDA abs,X",
     0xBE: "LDX abs,Y",
@@ -537,63 +537,6 @@ class cpu6502 {
 
   //#region Operations
 
-  // AND memory with accumulator
-  private and(mode: string, arg: number) {
-
-    switch (mode) {
-      case "#": // immediate
-        this.Registers.A &= arg;
-        this.Registers.P.SetNegative(this.Registers.A);
-        this.Registers.P.SetZero(this.Registers.A);
-        break;
-      case "abs": // absolute
-        var b = this.Memory.ReadByte(arg);
-        this.Registers.A &= b;
-        this.Registers.P.SetNegative(this.Registers.A);
-        this.Registers.P.SetZero(this.Registers.A);
-        break;
-      case "abs,X": // absolute + X index
-        var b = this.Memory.ReadByte(arg + this.Registers.X);
-        this.Registers.A &= b;
-        this.Registers.P.SetNegative(this.Registers.A);
-        this.Registers.P.SetZero(this.Registers.A);
-        break;
-      case "abs,Y": // absolute + Y index
-        var b = this.Memory.ReadByte(arg + this.Registers.Y);
-        this.Registers.A &= b;
-        this.Registers.P.SetNegative(this.Registers.A);
-        this.Registers.P.SetZero(this.Registers.A);
-      case "X,ind": // X-indexed, indirect
-        var b = this.Memory.ReadByte(arg + this.Registers.X);
-        this.Registers.A &= b;
-        this.Registers.P.SetNegative(this.Registers.A);
-        this.Registers.P.SetZero(this.Registers.A);
-        break;
-      case "ind,Y": // indirect, Y-indexed
-        var addr = this.Memory.ReadWord(arg) + this.Registers.Y;
-        var b = this.Memory.ReadWord(addr);
-        this.Registers.A &= b;
-        this.Registers.P.SetNegative(this.Registers.A);
-        this.Registers.P.SetZero(this.Registers.A);
-        break;
-      case "zpg": // zero page
-        var b = this.Memory.ReadByte(arg);
-        this.Registers.A &= b;
-        this.Registers.P.SetNegative(this.Registers.A);
-        this.Registers.P.SetZero(this.Registers.A);
-        break;
-      case "zpg,X": // zero page, X
-        var b = this.Memory.ReadByte(arg + this.Registers.X);
-        this.Registers.A &= b;
-        this.Registers.P.SetNegative(this.Registers.A);
-        this.Registers.P.SetZero(this.Registers.A);
-        break;
-    }
-
-    
-
-  }
-
   // arithmetic shift left
   // shifts bits of accumulator or memory 1 bit to left. Bit 0 set to zero and bit 7
   // moved to carry flag.
@@ -616,48 +559,7 @@ class cpu6502 {
 
   }
 
-  // Force break
-  private brk() {
-
-  }  
-
-
-  // Transfer accumulator to index Y
-  private tay() {
-    this.Registers.Y = this.Registers.A;
-    this.Registers.P.SetNegative(this.Registers.Y);
-    this.Registers.P.SetZero(this.Registers.Y);
-  }
-
-  // Transfer stack pointer to index X
-  private tsx() {
-    this.Registers.X = this.Registers.SP;
-    this.Registers.P.SetNegative(this.Registers.X);
-    this.Registers.P.SetZero(this.Registers.X);
-  }
-
-  // Transfer index X to accumulator
-  private txa() {
-    this.Registers.A = this.Registers.X;
-    this.Registers.P.SetNegative(this.Registers.A);
-    this.Registers.P.SetZero(this.Registers.A);
-  }
-
-  // Transfer index X to stack register
-  private txs() {
-    this.Registers.SP = this.Registers.X;
-  }
-
-  // Transfer index Y to accumulator
-  private tya() {
-    this.Registers.A = this.Registers.Y;
-    this.Registers.P.SetNegative(this.Registers.A);
-    this.Registers.P.SetZero(this.Registers.A);
-  }
-
   //#endregion
-
-
 
   // -------------------------------
   // CreateOpCodeFunction
