@@ -240,6 +240,32 @@ class cpu6502 {
     return result;
   }
 
+  // ------------------------------------
+  // Compare
+  //
+  // Used for CMP, CPX, CPY instructions
+  // Compares A/X/Y with memory, and sets
+  // flags as follows:
+  // C: If A/X/Y >= M
+  // Z: If A/X/Y == M
+  // N: If A/X/Y < M
+  // ------------------------------------
+  public compare(register: number, memory: number) {
+    this.Registers.P.Clear(ProcessorStatusFlag.Carry);
+    this.Registers.P.Clear(ProcessorStatusFlag.Zero);
+    this.Registers.P.Clear(ProcessorStatusFlag.Negative);
+    let result: number = register - memory
+    if (result == 0) {
+      this.Registers.P.Set(ProcessorStatusFlag.Zero;
+    }
+    if (result >= 0) {
+      this.Registers.P.Set(ProcessorStatusFlag.Carry);
+    }
+    if (result < 0) {
+      this.Registers.P.Set(ProcessorStatusFlag.Negative);
+    }
+  }
+
   private FetchInstruction(): number {
     let instruction = this.Memory.ReadByte(this.Registers.PC);
     this.Registers.PC = (this.Registers.PC++) & 0xFFFF;
@@ -469,34 +495,34 @@ class cpu6502 {
     //0xBC: "LDY abs,X",
     //0xBD: "LDA abs,X",
     //0xBE: "LDX abs,Y",
-    //0xC0: "CPY #",
-    //0xC1: "CMP X,ind",
-    //0xC4: "CPY zpg",
-    //0xC5: "CMP zpg",
+    0xC0: new OpCodeGenRule({ instruction: "CPY", addressMode: "#", operation: "cpu.compare(cpu.Registers.Y, OPERAND);" }),
+    0xC1: new OpCodeGenRule({ instruction: "CMP", addressMode: "x,ind", operation: "cpu.compare(cpu.Registers.A, OPERAND);" }),
+    0xC4: new OpCodeGenRule({ instruction: "CPY", addressMode: "zpg", operation: "cpu.compare(cpu.Registers.Y, OPERAND);" }),
+    0xC5: new OpCodeGenRule({ instruction: "CMP", addressMode: "zpg", operation: "cpu.compare(cpu.Registers.A, OPERAND);" }),
     0xC6: new OpCodeGenRule({ instruction: "DEC", addressMode: "zpg", operation: "OPERAND = (OPERAND - 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
     0xC8: new OpCodeGenRule({ instruction: "INY", addressMode: "impl", operation: "cpu.Registers.Y = (cpu.Registers.Y + 1) & 0xFF;", affectNFlag: true, affectZFlag: true }),
-    //0xC9: "CMP #",
+    0xC9: new OpCodeGenRule({ instruction: "CMP", addressMode: "#", operation: "cpu.compare(cpu.Registers.A, OPERAND);" }),
     0xCA: new OpCodeGenRule({ instruction: "DEX", addressMode: "impl", operation: "cpu.Registers.X = (cpu.Registers.X - 1) & 0xFF;", affectNFlag: true, affectZFlag: true }),
-    //0xCC: "CPY abs",
-    //0xCD: "CMP abs",
+    0xCC: new OpCodeGenRule({ instruction: "CPY", addressMode: "abs", operation: "cpu.compare(cpu.Registers.Y, OPERAND);" }),
+    0xCD: new OpCodeGenRule({ instruction: "CMP", addressMode: "abs", operation: "cpu.compare(cpu.Registers.A, OPERAND);" }),
     0xCE: new OpCodeGenRule({ instruction: "DEC", addressMode: "abs", operation: "OPERAND = (OPERAND - 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
     //0xD0: "BNE rel",
-    //0xD1: "CMP ind,Y",
-    //0xD5: "CMP zpg,X",
+    0xD1: new OpCodeGenRule({ instruction: "CMP", addressMode: "ind,Y", operation: "cpu.compare(cpu.Registers.A, OPERAND);" }),
+    0xD5: new OpCodeGenRule({ instruction: "CMP", addressMode: "zpg,X", operation: "cpu.compare(cpu.Registers.A, OPERAND);" }),
     0xD6: new OpCodeGenRule({ instruction: "DEC", addressMode: "zpg,X", operation: "OPERAND = (OPERAND - 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
     0xD8: new OpCodeGenRule({ instruction: "CLD", addressMode: "impl", operation: "cpu.Registers.P.Clear(ProcessorStatusFlag.Decimal);" }),
-    //0xD9: "CMP abs,Y",
-    //0xDD: "CMP abs,X",
+    0xD9: new OpCodeGenRule({ instruction: "CMP", addressMode: "abs,Y", operation: "cpu.compare(cpu.Registers.A, OPERAND);" }),
+    0xDD: new OpCodeGenRule({ instruction: "CMP", addressMode: "abs,X", operation: "cpu.compare(cpu.Registers.A, OPERAND);" }),
     0xDE: new OpCodeGenRule({ instruction: "DEC", addressMode: "abs,X", operation: "OPERAND = (OPERAND - 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
-    //0xE0: "CPX #",
+    0xE0: new OpCodeGenRule({ instruction: "CPX", addressMode: "#", operation: "cpu.compare(cpu.Registers.X, OPERAND);" }),
     //0xE1: "SBC X,ind",
-    //0xE4: "CPX zpg",
+    0xE4: new OpCodeGenRule({ instruction: "CPX", addressMode: "zpg", operation: "cpu.compare(cpu.Registers.X, OPERAND);" }),
     //0xE5: "SBC zpg",
     0xE6: new OpCodeGenRule({ instruction: "INC", addressMode: "zpg", operation: "OPERAND = (OPERAND + 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
     0xE8: new OpCodeGenRule({ instruction: "INX", addressMode: "impl", operation: "cpu.Registers.X = (cpu.Registers.X + 1) & 0xFF;", affectNFlag: true, affectZFlag: true }),
     //0xE9: "SBC #",
     0xEA: new OpCodeGenRule({ instruction: "NOP", addressMode: "impl", operation: "" }),
-    //0xEC: "CPX abs",
+    0xEC: new OpCodeGenRule({ instruction: "CPX", addressMode: "abs", operation: "cpu.compare(cpu.Registers.X, OPERAND);" }),
     //0xED: "SBC abs",
     0xEE: new OpCodeGenRule({ instruction: "INC", addressMode: "abs", operation: "OPERAND = (OPERAND + 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
     //0xF0: "BEQ rel",
