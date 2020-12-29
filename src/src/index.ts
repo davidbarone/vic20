@@ -1,5 +1,5 @@
 import cpu6502 from "./cpu6502";
-import Memory from "./memory";
+import Memory from "./Memory";
 
 declare global {
   interface Window { cpu6502: any; }

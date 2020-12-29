@@ -1,7 +1,7 @@
 import OpCodeGenRule from "./OpCodeGenRule";
 import OpCodeGenParams from "./OpCodeGenParams";
 import ProcessorStatus from "./ProcessorStatus";
-import Memory from "./memory";
+import Memory from "./Memory";
 import { ProcessorStatusFlag } from "./ProcessorStatusFlag";
 import Registers from "./Registers";
 
