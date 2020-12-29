@@ -82,7 +82,7 @@
 // Detailed memory maps can be found at:
 // - http://www.zimmers.net/cbmpics/cbm/vic/memorymap.txt
 
-class Memory {
+export default class Memory {
     private Mem: Uint8Array;
     private Size: number = 65536;
     private ReadFunc: Array<Function>;

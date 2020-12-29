@@ -1,3 +1,5 @@
+import ProcessorStatus from "./ProcessorStatus";
+
 // **********************************
 // CPU Registers
 //
@@ -8,7 +10,7 @@
 // Y = y-index register (8-bit)
 // P = processor status register (8-bit)
 // **********************************
-interface Registers {
+export default interface Registers {
   PC: number;
   SP: number;
   A: number;

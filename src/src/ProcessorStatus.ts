@@ -1,15 +1,4 @@
-enum ProcessorStatusFlag {
-    None = 0,
-    Carry = 1 << 0,
-    Zero = 1 << 1,
-    Interrupt = 1 << 2,
-    Decimal = 1 << 3,
-    Breakpoint = 1 << 4,
-    Overflow = 1 << 6,
-    Negative = 1 << 7,
-    All = ~(~0 << 8),
-
-}
+import { ProcessorStatusFlag } from "./ProcessorStatusFlag";
 
 // -------------------------------
 // 6502 ProcessorStatus Register
@@ -24,7 +13,7 @@ enum ProcessorStatusFlag {
 // 6   V    Overflow
 // 7   N    Negative
 
-class ProcessorStatus {
+export default class ProcessorStatus {
     private Flags: number;
 
     constructor(flags: number) {
