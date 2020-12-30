@@ -19,9 +19,9 @@ let immediateDecimal = `[#]${decimal}`;
 let operandRegex = [
   { mode: "Accumulator", re: '^[A]$' },
   { mode: "Immediate", re: `^(?<value>(${immediateDecimal}|${immediateHexByte}))$` }, // 8 bit
-  { mode: "ZeroPage", re: `^(${decimal}|${hexByte})$`},  // 8 bit
+  { mode: "ZeroPage", re: `^(?<value>(${decimal}|${hexByte}))$`},  // 8 bit
   { mode: "ZeroPageX", re: `^(?<value>(${decimal}|${hexByte}))(,X)$` },
-  { mode: "ZeroPageY", re: `^(${decimal}|${hexByte})(,Y)$` },
+  { mode: "ZeroPageY", re: `^(?<value>(${decimal}|${hexByte}))(,Y)$` },
   { mode: "Relative", re: `^(${decimal}|${hexByte})$` }, // 8 bit
   { mode: "Absolute", re: `^(${decimal}|${hexWord})$` },  // 16 bit
   { mode: "AbsoluteX", re: `^(${decimal}|${hexWord})(,X)$` },  // 16 bit
