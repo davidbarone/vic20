@@ -261,13 +261,16 @@ export default class cpu6502 {
   // to 6502 machine code.
   // ---------------------------------
   public Assemble(source: string): Uint8Array {
-    return new Uint8Array();
 
     let lines = source.split("\n");
+    console.log(source);
 
     lines.forEach(l => {
-      alert(l);
+      console.log(l);
+
     });
+
+    return new Uint8Array();
   }
 
   // ------------------------------------

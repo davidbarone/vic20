@@ -3,6 +3,7 @@ import Memory from "../src/Memory"
 
 test('assembler tests', () => {
     let cpu = new cpu6502(new Memory());
+    console.log('test');
     cpu.Assemble(`
 MY_LABEL:
     TAY
