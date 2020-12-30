@@ -263,7 +263,6 @@ export default class cpu6502 {
   public Assemble(source: string): Uint8Array {
 
     let lines = source.split("\n");
-    console.log(source);
 
     lines.forEach(l => {
       console.log(l);

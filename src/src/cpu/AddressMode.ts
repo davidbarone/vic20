@@ -13,8 +13,8 @@ interface AddressModeRule {
 }
 
 class AddressMode {
-    private static hexByte: string = '[\$][a-fA-f0-9]{2}';
-    private static hexWord: string = '[\$][a-fA-f0-9]{4}';
+    private static hexByte: string = '[$][a-fA-F0-9]{2}';
+    private static hexWord: string = '[$][a-fA-F0-9]{4}';
     private static decimal: string = '\\d+';
 
     private static addressModes: Array<AddressModeRule> = [
@@ -27,11 +27,20 @@ class AddressMode {
         { mode: "abs", desc: "Absolute", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))$`) },
         { mode: "abs,X", desc: "AbsoluteX", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,X)$`) },  // 16 bit
         { mode: "abs,Y", desc: "AbsoluteY", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,Y)$`) },  // 16 bit
-        { mode: "ind", desc: "Indirect", bytes: 3, pattern: new RegExp(`^\((?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))\)$`) },
-        { mode: "X,ind", desc: "IndexedIndirect", bytes: 2, pattern: new RegExp(`^\((?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,X\))$`) },
-        { mode: "ind,Y", desc: "IndirectIndexed", bytes: 2, pattern: new RegExp(`^\((?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(\),Y)$`) },
+        { mode: "ind", desc: "Indirect", bytes: 3, pattern: new RegExp(`^[(](?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))[)]$`) },
+        { mode: "X,ind", desc: "IndexedIndirect", bytes: 2, pattern: new RegExp(`^[(](?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,X[)])$`) },
+        { mode: "ind,Y", desc: "IndirectIndexed", bytes: 2, pattern: new RegExp(`^[(](?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))([)],Y)$`) },
         { mode: "impl", desc: "Implied", bytes: 1, pattern: new RegExp("^$") }
     ];
+
+    private static ParseNumber(input: string): number {
+        if (input.substr(0, 1) === "$") {
+            // hex
+            return parseInt(input.substr(1), 16);
+        } else {
+            return parseInt(input);
+        }
+    }
 
     // ------------------------------------
     // Parses a string input and returns
@@ -41,7 +50,6 @@ class AddressMode {
     static Parse(operand: string): { AddressMode: AddressModeRule; Value: number | null; } {
 
         operand = operand.toUpperCase().trim();
-        console.log(operand);
         
         for (const rule of AddressMode.addressModes) {
             let regex = rule.pattern;
@@ -50,7 +58,7 @@ class AddressMode {
                 let value: number | null = null
                 if (match != null) {
                     if (match.groups) {
-                        value = parseInt(match.groups["value"]);
+                        value = AddressMode.ParseNumber(match.groups["value"]);
                     }
                     
                     return {

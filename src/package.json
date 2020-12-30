@@ -4,7 +4,7 @@
   "description": "Vic20 emulator",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --collectCoverage",
     "wpw": "webpack --watch",
     "serve": "webpack-dev-server --mode=development",
     "go": "start npm run wpw && start npm run serve",
