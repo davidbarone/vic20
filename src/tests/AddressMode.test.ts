@@ -7,7 +7,7 @@ test('Parse immediate', () => {
     expect(rule.Value).toBe(10);
 });
 
-test('Parse immediate', () => {
+test('Parse accumulator', () => {
     let operand = "A";
     let rule = AddressMode.Parse(operand);
     expect(rule.AddressMode.mode).toBe("A");
