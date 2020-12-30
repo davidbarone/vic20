@@ -1,7 +1,7 @@
 import OpCodeGenRule from "./OpCodeGenRule";
 import OpCodeGenParams from "./OpCodeGenParams";
 import ProcessorStatus from "./ProcessorStatus";
-import Memory from "./Memory";
+import Memory from "../Memory";
 import { ProcessorStatusFlag } from "./ProcessorStatusFlag";
 import Registers from "./Registers";
 
@@ -257,11 +257,17 @@ export default class cpu6502 {
   }
 
   // ---------------------------------
-  // Assembles source code to 6502
-  // binary.
+  // Assembles 6502 assembly code
+  // to 6502 machine code.
   // ---------------------------------
-  public assemble(source: string): Uint8Array {
+  public Assemble(source: string): Uint8Array {
     return new Uint8Array();
+
+    let lines = source.split("\n");
+
+    lines.forEach(l => {
+      alert(l);
+    });
   }
 
   // ------------------------------------
