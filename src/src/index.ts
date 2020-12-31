@@ -1,4 +1,4 @@
-import cpu6502 from "./Cpu/Cpu6502";
+import cpu6502 from "./cpu/Cpu6502";
 import Memory from "./Memory";
 
 declare global {
