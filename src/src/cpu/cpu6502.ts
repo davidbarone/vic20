@@ -4,6 +4,7 @@ import ProcessorStatus from "./ProcessorStatus";
 import Memory from "../Memory";
 import { ProcessorStatusFlag } from "./ProcessorStatusFlag";
 import Registers from "./Registers";
+import AddressMode from "./AddressMode";
 
 // **********************************
   //
@@ -264,12 +265,70 @@ export default class cpu6502 {
 
     let lines = source.split("\n");
 
-    lines.forEach(l => {
-      console.log(l);
-
+    // remove comments
+    lines.forEach(line => {
+      let code = line.split(';')[0];
     });
 
     return new Uint8Array();
+  }
+
+  // -------------------------------
+  // Assembles 1 line.
+  // -------------------------------
+  public AssembleLine(line: string): Uint8Array {
+
+    let arr = new Uint8Array();
+    console.log(line);
+
+    // Basic regex to parse line
+    let re = /^(?<label>[A-Za-z][A-Za-z0-9_]*[:])*[\s]*(?<instruction>[A-Za-z]{3})(?<operand>.*)*$/;
+    let results = line.match(re);
+    if (results == null || typeof (results) == "undefined") {
+      throw new Error("Invalid format");
+    } else {
+      let groups = results.groups;
+      if (groups) {
+        let operand = (groups["operand"]);
+        if (typeof (operand) == "undefined") {
+          operand = "";
+        }
+        operand = operand.toUpperCase().trim();
+        let instruction = groups["instruction"].toUpperCase().trim();
+        var addressModeResult = AddressMode.Parse(operand);
+
+        let bytes = addressModeResult.AddressMode.bytes;
+        let addressMode = addressModeResult.AddressMode.mode;
+        let value = addressModeResult.Value;
+
+        // Find op code
+        let opCodes = this.opCodes6502Array.filter(a => a.rule.Instruction === instruction && a.rule.AddressMode === addressMode);
+
+        if (opCodes.length > 0) {
+            // Found the op code
+            switch (bytes) {
+              case 1:
+                return new Uint8Array([opCodes[0].key]);
+                break;
+              case 2:
+                let byte = (value ?? 0) & 0xFF;
+                return new Uint8Array([opCodes[0].key, byte]);
+                break;
+              case 3:
+                // little-endian format
+                let lo = (value ?? 0) & 0xFF;
+                let hi = ((value ?? 0) >> 8) & 0xFF;
+                return new Uint8Array([opCodes[0].key, lo, hi]);
+              default:
+                throw new Error("Op code should be 1,2 or 3 bytes long.");
+            }
+        } else {
+          throw new Error("Cannot find single op code");
+        }
+      } else {
+        throw new Error("Invalid format");
+      }
+    }
   }
 
   // ------------------------------------
@@ -413,7 +472,25 @@ export default class cpu6502 {
     this.Memory.WriteByte(offset, value);
   }
 
-  private opcodes6502Documented: { [key: number]: OpCodeGenRule } = {
+  // -----------------------------
+  // Returns op codes as an array.
+  // -----------------------------
+  get opCodes6502Array(): Array<{ key: number, rule: OpCodeGenRule }> {
+    let rules = [];
+    for (const [key, value] of Object.entries(this.opCodes6502)) {
+      rules.push({
+        key: parseInt(key),
+        rule: value
+      });
+    }
+    return rules;
+  }
+
+  get opCodes6502(): { [key: number]: OpCodeGenRule } {
+    return this.opCodes6502Documented;
+  }
+
+  private opCodes6502Documented: { [key: number]: OpCodeGenRule } = {
     //0x00: "BRK impl",
     0x01: new OpCodeGenRule({ instruction: "ORA", addressMode: "X,ind", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     0x05: new OpCodeGenRule({ instruction: "ORA", addressMode: "zpg", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
