@@ -1,15 +1,36 @@
 import cpu6502 from "../src/cpu/cpu6502";
 import Memory from "../src/Memory";
 
-let parseLineTests: Array<{ input: string, output: Uint8Array }> = [
-    { input: "CLC", output: new Uint8Array([0x18]) },
-    { input: "DEX", output: new Uint8Array([0xCA]) }
+let parseLineTests: Array<{ input: string, expected: Uint8Array }> = [
+    { input: "CLC", expected: new Uint8Array([0x18]) },
+    { input: "DEX", expected: new Uint8Array([0xCA]) }
 ]
 
 test('Assemble Line', () => {
     for (let test of parseLineTests) {
         let cpu = new cpu6502(new Memory());
         let actual = cpu.AssembleLine(test.input);
-        expect(test.output).toEqual(actual);
+        expect(actual).toEqual(test.expected);
+    }
+});
+
+let AssemblerTests: Array<{ input: string, expected: string }> = [
+    {
+        input: `
+LDA #$01
+STA $0200
+LDA #$05
+STA $0201
+LDA #$08
+STA $0202
+`, expected: 'A9 01 8D 00 02 A9 05 8D 01 02 A9 08 8D 02 02'
+    }
+];
+
+test('Assemble', () => {
+    for (let test of AssemblerTests) {
+        let cpu = new cpu6502(new Memory());
+        let actual = cpu.Assemble(test.input);
+        expect(cpu.ToHex(actual)).toEqual(test.expected);
     }
 });

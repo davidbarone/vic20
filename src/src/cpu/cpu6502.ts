@@ -263,14 +263,38 @@ export default class cpu6502 {
   // ---------------------------------
   public Assemble(source: string): Uint8Array {
 
+    let bytes = new Uint8Array();
     let lines = source.split("\n");
 
     // remove comments
     lines.forEach(line => {
-      let code = line.split(';')[0];
+      let code = line.split(';')[0].trim().toUpperCase();
+      if (code !== "") {
+        let newBytes = this.AssembleLine(code);
+        var mergedArray = new Uint8Array(bytes.length + newBytes.length);
+        mergedArray.set(bytes);
+        mergedArray.set(newBytes, bytes.length);
+        bytes = mergedArray;
+      }
     });
 
-    return new Uint8Array();
+    return bytes;
+  }
+
+  public ToHex(buffer: Uint8Array) {
+
+    // Lookup table
+    const LUT_HEX_4b = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
+    const LUT_HEX_8b = new Array(0x100);
+    for (let n = 0; n < 0x100; n++) {
+      LUT_HEX_8b[n] = `${LUT_HEX_4b[(n >>> 4) & 0xF]}${LUT_HEX_4b[n & 0xF]}`;
+    }
+
+    let out = '';
+    for (let idx = 0, edx = buffer.length; idx < edx; idx++) {
+      out += LUT_HEX_8b[buffer[idx]] + " ";
+    }
+    return out.trimEnd();
   }
 
   // -------------------------------
