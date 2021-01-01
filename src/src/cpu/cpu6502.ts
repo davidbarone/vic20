@@ -674,7 +674,7 @@ export default class cpu6502 {
     //0xF1: "SBC ind,Y",
     //0xF5: "SBC zpg,X",
     0xF6: new OpCodeGenRule({ instruction: "INC", addressMode: "zpg,X", operation: "OPERAND = (OPERAND + 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
-    //0xF8: "SED impl",
+    0xF8: new OpCodeGenRule({ instruction: "SED", addressMode: "impl", operation: "cpu.Registers.P.Set(ProcessorStatusFlag.Decimal);" }),
     //0xF9: "SBC abs,Y",
     //0xFD: "SBC abs,X",
     0xFE: new OpCodeGenRule({ instruction: "INC", addressMode: "abs,X", operation: "OPERAND = (OPERAND + 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
