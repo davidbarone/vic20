@@ -257,6 +257,18 @@ export default class cpu6502 {
     }
   }
 
+  // ----------------------------------
+  // branch()
+  // 
+  // sets PC
+  // ----------------------------------
+  public branch(condition: { (): boolean } , offset: number) {
+    if (condition()) {
+      this.Registers.PC = (this.Registers.PC + offset) & 0xffff;
+    }
+    // TODO: Page boundary crossed? Need to add timing
+  }
+
   // ---------------------------------
   // Assembles 6502 assembly code
   // to 6502 machine code.
@@ -524,7 +536,7 @@ export default class cpu6502 {
     0x0A: new OpCodeGenRule({ instruction: "ASL", addressMode: "A", operation: "cpu.Registers.A = rotate(cpu.Registers.A, false, false);", affectNFlag: true, affectZFlag: true }),
     0x0D: new OpCodeGenRule({ instruction: "ORA", addressMode: "abs", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     0x0E: new OpCodeGenRule({ instruction: "ASL", addressMode: "abs", operation: "OPERAND = rotate(OPERAND, false, false);", affectNFlag: true, affectZFlag: true, write: true }),
-    //0x10: "BPL rel",
+    0x10: new OpCodeGenRule({ instruction: "BPL", addressMode: "rel", operation: "cpu.branch(() => {!cpu.Registers.P.IsSet(ProcessorStatusFlag.Negative), OPERAND);" }),
     0x11: new OpCodeGenRule({ instruction: "ORA", addressMode: "ind,Y", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     0x15: new OpCodeGenRule({ instruction: "ORA", addressMode: "zpg,X", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     0x16: new OpCodeGenRule({ instruction: "ASL", addressMode: "zpg,X", operation: "OPERAND = rotate(OPERAND, false, false);", affectNFlag: true, affectZFlag: true, write: true }),
@@ -543,7 +555,7 @@ export default class cpu6502 {
     //0x2C: "BIT abs",
     0x2D: new OpCodeGenRule({ instruction: "AND", addressMode: "abs", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x2E: new OpCodeGenRule({ instruction: "ROL", addressMode: "abs", operation: "OPERAND = rotate(OPERAND, false, true);", affectNFlag: true, affectZFlag: true, write: true }),
-    //0x30: "BMI rel",
+    0x30: new OpCodeGenRule({ instruction: "BMI", addressMode: "rel", operation: "cpu.branch(() => {cpu.Registers.P.IsSet(ProcessorStatusFlag.Negative), OPERAND);" }),
     0x31: new OpCodeGenRule({ instruction: "AND", addressMode: "ind,Y", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x35: new OpCodeGenRule({ instruction: "AND", addressMode: "zpg,X", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x36: new OpCodeGenRule({ instruction: "ROL", addressMode: "zpg,X", operation: "OPERAND = rotate(OPERAND, false, true);", affectNFlag: true, affectZFlag: true, write: true }),
@@ -561,7 +573,7 @@ export default class cpu6502 {
     //0x4C: "JMP abs",
     0x4D: new OpCodeGenRule({ instruction: "EOR", addressMode: "abs", operation: "cpu.Registers.A ^= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x4E: new OpCodeGenRule({ instruction: "LSR", addressMode: "abs", operation: "OPERAND = rotate(OPERAND, true, false);", affectNFlag: true, affectZFlag: true, write: true }),
-    //0x50: "BVC rel",
+    0x50: new OpCodeGenRule({ instruction: "BVC", addressMode: "rel", operation: "cpu.branch(() => {!cpu.Registers.P.IsSet(ProcessorStatusFlag.Overflow), OPERAND);" }),
     0x51: new OpCodeGenRule({ instruction: "EOR", addressMode: "ind,Y", operation: "cpu.Registers.A ^= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x55: new OpCodeGenRule({ instruction: "EOR", addressMode: "zpg,X", operation: "cpu.Registers.A ^= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x56: new OpCodeGenRule({ instruction: "LSR", addressMode: "zpg,X", operation: "OPERAND = rotate(OPERAND, true, false);", affectNFlag: true, affectZFlag: true, write: true }),
@@ -579,7 +591,7 @@ export default class cpu6502 {
     //0x6C: "JMP ind",
     0x6D: new OpCodeGenRule({ instruction: "ADC", addressMode: "abs", operation: "cpu.Registers.A = cpu.adc(OPERAND);", affectNFlag: true, affectZFlag: true }),
     0x6E: new OpCodeGenRule({ instruction: "ROR", addressMode: "abs", operation: "OPERAND = rotate(OPERAND, true, true);", affectNFlag: true, affectZFlag: true, write: true }),
-    //0x70: "BVS rel",
+    0x70: new OpCodeGenRule({ instruction: "BVS", addressMode: "rel", operation: "cpu.branch(() => {cpu.Registers.P.IsSet(ProcessorStatusFlag.Overflow), OPERAND);" }),
     0x71: new OpCodeGenRule({ instruction: "ADC", addressMode: "ind,Y", operation: "cpu.Registers.A = cpu.adc(OPERAND);", affectNFlag: true, affectZFlag: true }),
     0x75: new OpCodeGenRule({ instruction: "ADC", addressMode: "zpg,X", operation: "cpu.Registers.A = cpu.adc(OPERAND);", affectNFlag: true, affectZFlag: true }),
     0x76: new OpCodeGenRule({ instruction: "ROR", addressMode: "zpg,X", operation: "OPERAND = rotate(OPERAND, true, true);", affectNFlag: true, affectZFlag: true, write: true }),
@@ -596,7 +608,7 @@ export default class cpu6502 {
     0x8C: new OpCodeGenRule({ instruction: "STY", addressMode: "abs", operation: "OPERAND = cpu.Registers.Y;", write: true }),
     0x8D: new OpCodeGenRule({ instruction: "STA", addressMode: "abs", operation: "OPERAND = cpu.Registers.A;", write: true }),
     0x8E: new OpCodeGenRule({ instruction: "STX", addressMode: "abs", operation: "OPERAND = cpu.Registers.X;", write: true }),
-    //0x90: "BCC rel",
+    0x90: new OpCodeGenRule({ instruction: "BCC", addressMode: "rel", operation: "cpu.branch(() => {!cpu.Registers.P.IsSet(ProcessorStatusFlag.Carry), OPERAND);" }),
     0x91: new OpCodeGenRule({ instruction: "STA", addressMode: "ind,Y", operation: "OPERAND = cpu.Registers.A;", write: true }),
     0x94: new OpCodeGenRule({ instruction: "STY", addressMode: "zpg,X", operation: "OPERAND = cpu.Registers.Y;", write: true }),
     0x95: new OpCodeGenRule({ instruction: "STA", addressMode: "zpg,X", operation: "OPERAND = cpu.Registers.A;", write: true }),
@@ -617,7 +629,7 @@ export default class cpu6502 {
     0xAC: new OpCodeGenRule({ instruction: "LDY", addressMode: "abs", operation: "cpu.Registers.Y = OPERAND;", affectZFlag: true, affectNFlag: true }),
     0xAD: new OpCodeGenRule({ instruction: "LDA", addressMode: "abs", operation: "cpu.Registers.A = OPERAND;", affectZFlag: true, affectNFlag: true }),
     0xAE: new OpCodeGenRule({ instruction: "LDX", addressMode: "abs", operation: "cpu.Registers.X = OPERAND;", affectZFlag: true, affectNFlag: true }),
-    //0xB0: "BCS rel",
+    0xB0: new OpCodeGenRule({ instruction: "BCS", addressMode: "rel", operation: "cpu.branch(() => {cpu.Registers.P.IsSet(ProcessorStatusFlag.Carry), OPERAND);" }),
     0xB1: new OpCodeGenRule({ instruction: "LDA", addressMode: "ind,Y", operation: "cpu.Registers.A = OPERAND;", affectZFlag: true, affectNFlag: true }),
     0xB4: new OpCodeGenRule({ instruction: "LDY", addressMode: "zpg,X", operation: "cpu.Registers.Y = OPERAND;", affectZFlag: true, affectNFlag: true }),
     0xB5: new OpCodeGenRule({ instruction: "LDA", addressMode: "zpg,X", operation: "cpu.Registers.A = OPERAND;", affectZFlag: true, affectNFlag: true }),
@@ -639,7 +651,7 @@ export default class cpu6502 {
     0xCC: new OpCodeGenRule({ instruction: "CPY", addressMode: "abs", operation: "cpu.compare(cpu.Registers.Y, OPERAND);" }),
     0xCD: new OpCodeGenRule({ instruction: "CMP", addressMode: "abs", operation: "cpu.compare(cpu.Registers.A, OPERAND);" }),
     0xCE: new OpCodeGenRule({ instruction: "DEC", addressMode: "abs", operation: "OPERAND = (OPERAND - 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
-    //0xD0: "BNE rel",
+    0xD0: new OpCodeGenRule({ instruction: "BNE", addressMode: "rel", operation: "cpu.branch(() => {!cpu.Registers.P.IsSet(ProcessorStatusFlag.Zero), OPERAND);" }),
     0xD1: new OpCodeGenRule({ instruction: "CMP", addressMode: "ind,Y", operation: "cpu.compare(cpu.Registers.A, OPERAND);" }),
     0xD5: new OpCodeGenRule({ instruction: "CMP", addressMode: "zpg,X", operation: "cpu.compare(cpu.Registers.A, OPERAND);" }),
     0xD6: new OpCodeGenRule({ instruction: "DEC", addressMode: "zpg,X", operation: "OPERAND = (OPERAND - 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
@@ -658,7 +670,7 @@ export default class cpu6502 {
     0xEC: new OpCodeGenRule({ instruction: "CPX", addressMode: "abs", operation: "cpu.compare(cpu.Registers.X, OPERAND);" }),
     //0xED: "SBC abs",
     0xEE: new OpCodeGenRule({ instruction: "INC", addressMode: "abs", operation: "OPERAND = (OPERAND + 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
-    //0xF0: "BEQ rel",
+    0xF0: new OpCodeGenRule({ instruction: "BEQ", addressMode: "rel", operation: "cpu.branch(() => {cpu.Registers.P.IsSet(ProcessorStatusFlag.Zero), OPERAND);" }),
     //0xF1: "SBC ind,Y",
     //0xF5: "SBC zpg,X",
     0xF6: new OpCodeGenRule({ instruction: "INC", addressMode: "zpg,X", operation: "OPERAND = (OPERAND + 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
