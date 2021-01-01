@@ -270,7 +270,6 @@ export default class cpu6502 {
   //
   // Generally used to update accumulator.
   // ------------------------------------------
-
   public sbc(value: number): number {
 
     var carry = this.Registers.P.IsSet(ProcessorStatusFlag.Carry) ? 1 : 0;
@@ -311,6 +310,10 @@ export default class cpu6502 {
       this.Registers.PC = (this.Registers.PC + offset) & 0xffff;
     }
     // TODO: Page boundary crossed? Need to add timing
+  }
+
+  public brk() {
+    // TODO
   }
 
   // ---------------------------------
@@ -571,7 +574,7 @@ export default class cpu6502 {
   }
 
   private opCodes6502Documented: { [key: number]: OpCodeGenRule } = {
-    //0x00: "BRK impl",
+    0x00: new OpCodeGenRule({ instruction: "BRK", addressMode: "impl", operation: "cpu.brk()" }),
     0x01: new OpCodeGenRule({ instruction: "ORA", addressMode: "X,ind", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     0x05: new OpCodeGenRule({ instruction: "ORA", addressMode: "zpg", operation: "cpu.Registers.A = cpu.Registers.A | OPERAND", affectNFlag: true, affectZFlag: true }),
     0x06: new OpCodeGenRule({ instruction: "ASL", addressMode: "zpg", operation: "OPERAND = rotate(OPERAND, false, false);", affectNFlag: true, affectZFlag: true, write: true }),
@@ -603,7 +606,7 @@ export default class cpu6502 {
     0x31: new OpCodeGenRule({ instruction: "AND", addressMode: "ind,Y", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x35: new OpCodeGenRule({ instruction: "AND", addressMode: "zpg,X", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x36: new OpCodeGenRule({ instruction: "ROL", addressMode: "zpg,X", operation: "OPERAND = rotate(OPERAND, false, true);", affectNFlag: true, affectZFlag: true, write: true }),
-    //0x38: "SEC impl",
+    0x38: new OpCodeGenRule({ instruction: "SEC", addressMode: "impl", operation: "cpu.Registers.P.Set(ProcessorStatusFlag.Carry);" }),
     0x39: new OpCodeGenRule({ instruction: "AND", addressMode: "abs,Y", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x3D: new OpCodeGenRule({ instruction: "AND", addressMode: "abs,X", operation: "cpu.Registers.A &= OPERAND;", affectNFlag: true, affectZFlag: true }),
     0x3E: new OpCodeGenRule({ instruction: "ROL", addressMode: "abs,X", operation: "OPERAND = rotate(OPERAND, false, true);", affectNFlag: true, affectZFlag: true, write: true }),
