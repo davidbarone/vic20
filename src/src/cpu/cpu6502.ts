@@ -223,6 +223,8 @@ export default class cpu6502 {
   // Carry flag set in this function. Zero +
   // Negative flags must be set separately.
   // TO DO: V flag not being set.
+  //
+  // Generally used to update accumulator.
   // ------------------------------------------
   public adc(value: number): number {
 
@@ -254,6 +256,48 @@ export default class cpu6502 {
       }
       result &= 0xff;
       return result;
+    }
+  }
+
+  // ------------------------------------------
+  // Subtract with carry
+  //
+  // returns: A-M-(1-C)
+  // If d flag set, then does BCD version.
+  // Carry flag set in this function. Zero +
+  // Negative flags must be set separately.
+  // TO DO: V flag not being set.
+  //
+  // Generally used to update accumulator.
+  // ------------------------------------------
+
+  public sbc(value: number): number {
+
+    var carry = this.Registers.P.IsSet(ProcessorStatusFlag.Carry) ? 1 : 0;
+
+    if (this.Registers.P.IsSet(ProcessorStatusFlag.Decimal)) {
+      // bcd version
+      let al = (this.Registers.A & 0xf) - (value & 0xf) - carry);
+
+      let ah = (this.Registers.A >>> 4) - (value >>> 4);
+      
+      if (al & 0x10) {
+        al = (al - 6) & 0xf;
+        ah--;
+      }
+      if (ah & 0x10) {
+        ah = (ah - 6) & 0xf;
+      }
+      
+      let result = this.Registers.A - value - carry;
+      //this.Registers.P.Negative = !!(result & 0x80);
+      //this.Registers.P.Zero = !(result & 0xff);
+      //this.Registers.P.Overflow = !!((cpu.a ^ result) & (subend ^ cpu.a) & 0x80);
+      //this.Registers.P.Carry = !(result & 0x100);
+      return al | (ah << 4);
+    } else {
+      // one's complement
+      return this.adc(value ^ 0xff);
     }
   }
 
@@ -660,23 +704,23 @@ export default class cpu6502 {
     0xDD: new OpCodeGenRule({ instruction: "CMP", addressMode: "abs,X", operation: "cpu.compare(cpu.Registers.A, OPERAND);" }),
     0xDE: new OpCodeGenRule({ instruction: "DEC", addressMode: "abs,X", operation: "OPERAND = (OPERAND - 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
     0xE0: new OpCodeGenRule({ instruction: "CPX", addressMode: "#", operation: "cpu.compare(cpu.Registers.X, OPERAND);" }),
-    //0xE1: "SBC X,ind",
+    0xE1: new OpCodeGenRule({ instruction: "SBC", addressMode: "X,ind", operation: "cpu.Registers.A = cpu.sbc(OPERAND);", affectNFlag: true, affectZFlag: true }),
     0xE4: new OpCodeGenRule({ instruction: "CPX", addressMode: "zpg", operation: "cpu.compare(cpu.Registers.X, OPERAND);" }),
-    //0xE5: "SBC zpg",
+    0xE5: new OpCodeGenRule({ instruction: "SBC", addressMode: "zpg", operation: "cpu.Registers.A = cpu.sbc(OPERAND);", affectNFlag: true, affectZFlag: true }),
     0xE6: new OpCodeGenRule({ instruction: "INC", addressMode: "zpg", operation: "OPERAND = (OPERAND + 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
     0xE8: new OpCodeGenRule({ instruction: "INX", addressMode: "impl", operation: "cpu.Registers.X = (cpu.Registers.X + 1) & 0xFF;", affectNFlag: true, affectZFlag: true }),
-    //0xE9: "SBC #",
+    0xE9: new OpCodeGenRule({ instruction: "SBC", addressMode: "#", operation: "cpu.Registers.A = cpu.sbc(OPERAND);", affectNFlag: true, affectZFlag: true }),
     0xEA: new OpCodeGenRule({ instruction: "NOP", addressMode: "impl", operation: "" }),
     0xEC: new OpCodeGenRule({ instruction: "CPX", addressMode: "abs", operation: "cpu.compare(cpu.Registers.X, OPERAND);" }),
-    //0xED: "SBC abs",
+    0xED: new OpCodeGenRule({ instruction: "SBC", addressMode: "abs", operation: "cpu.Registers.A = cpu.sbc(OPERAND);", affectNFlag: true, affectZFlag: true }),
     0xEE: new OpCodeGenRule({ instruction: "INC", addressMode: "abs", operation: "OPERAND = (OPERAND + 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
     0xF0: new OpCodeGenRule({ instruction: "BEQ", addressMode: "rel", operation: "cpu.branch(() => {cpu.Registers.P.IsSet(ProcessorStatusFlag.Zero), OPERAND);" }),
-    //0xF1: "SBC ind,Y",
-    //0xF5: "SBC zpg,X",
+    0xF1: new OpCodeGenRule({ instruction: "SBC", addressMode: "ind,Y", operation: "cpu.Registers.A = cpu.sbc(OPERAND);", affectNFlag: true, affectZFlag: true }),
+    0xF5: new OpCodeGenRule({ instruction: "SBC", addressMode: "zpg,X", operation: "cpu.Registers.A = cpu.sbc(OPERAND);", affectNFlag: true, affectZFlag: true }),
     0xF6: new OpCodeGenRule({ instruction: "INC", addressMode: "zpg,X", operation: "OPERAND = (OPERAND + 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
     0xF8: new OpCodeGenRule({ instruction: "SED", addressMode: "impl", operation: "cpu.Registers.P.Set(ProcessorStatusFlag.Decimal);" }),
-    //0xF9: "SBC abs,Y",
-    //0xFD: "SBC abs,X",
+    0xF9: new OpCodeGenRule({ instruction: "SBC", addressMode: "abs,Y", operation: "cpu.Registers.A = cpu.sbc(OPERAND);", affectNFlag: true, affectZFlag: true }),
+    0xFD: new OpCodeGenRule({ instruction: "SBC", addressMode: "abs,X", operation: "cpu.Registers.A = cpu.sbc(OPERAND);", affectNFlag: true, affectZFlag: true }),
     0xFE: new OpCodeGenRule({ instruction: "INC", addressMode: "abs,X", operation: "OPERAND = (OPERAND + 1) & 0xFF;", affectNFlag: true, affectZFlag: true, write: true }),
   };
 
