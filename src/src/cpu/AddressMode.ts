@@ -16,6 +16,7 @@ class AddressMode {
     private static hexByte: string = '[$][a-fA-F0-9]{2}';
     private static hexWord: string = '[$][a-fA-F0-9]{4}';
     private static decimal: string = '\\d+';
+    private static label: string = '[A-Za-z][A-Za-z0-9_]*'  // can be label or defined symbol
 
     private static addressModes: Array<AddressModeRule> = [
         { mode: "A", desc: "Accumulator", bytes: 2, pattern: new RegExp('^[A]$') },
@@ -23,7 +24,7 @@ class AddressMode {
         { mode: "zpg", desc: "ZeroPage", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))$`) },  // 8 bit
         { mode: "zpg,X", desc: "ZeroPageX", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))(,X)$`) },
         { mode: "zpg,Y", desc: "ZeroPageY", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))(,Y)$`) },
-        { mode: "rel", desc: "Relative", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))$`) }, // 8 bit
+        { mode: "rel", desc: "Relative", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}|${AddressMode.label}}))$`) }, // 8 bit
         { mode: "abs", desc: "Absolute", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))$`) },
         { mode: "abs,X", desc: "AbsoluteX", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,X)$`) },  // 16 bit
         { mode: "abs,Y", desc: "AbsoluteY", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,Y)$`) },  // 16 bit
@@ -33,12 +34,23 @@ class AddressMode {
         { mode: "impl", desc: "Implied", bytes: 1, pattern: new RegExp("^$") }
     ];
 
-    private static ParseNumber(input: string): number {
+    private static ParseNumber(input: string, labels: { [name: string]: number; }): number {
         if (input.substr(0, 1) === "$") {
-            // hex
+            // hex number
             return parseInt(input.substr(1), 16);
         } else {
-            return parseInt(input);
+            let number = parseInt(input);
+            if (isNaN(number)) {
+                // label
+                number = labels[input];
+                if (typeof (number) === "undefined") {
+                    throw new Error(`Label [${input}] not found.`);
+                }
+                return number;
+            } else {
+                // literal number
+                return number;
+            }
         }
     }
 
@@ -47,7 +59,8 @@ class AddressMode {
     // the address mode that matches the
     // syntax. Used to parse assembly code.
     // ------------------------------------
-    static Parse(operand: string): { AddressMode: AddressModeRule; Value: number | null; } {
+    static Parse(operand: string, labels: { [name: string]: number; }): { AddressMode: AddressModeRule; Value: number | null; } {
+        
 
         operand = operand.toUpperCase().trim();
         
@@ -58,7 +71,7 @@ class AddressMode {
                 let value: number | null = null
                 if (match != null) {
                     if (match.groups) {
-                        value = AddressMode.ParseNumber(match.groups["value"]);
+                        value = AddressMode.ParseNumber(match.groups["value"], labels);
                     }
                     
                     return {

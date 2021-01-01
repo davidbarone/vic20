@@ -276,7 +276,7 @@ export default class cpu6502 {
 
     if (this.Registers.P.IsSet(ProcessorStatusFlag.Decimal)) {
       // bcd version
-      let al = (this.Registers.A & 0xf) - (value & 0xf) - carry);
+      let al = (this.Registers.A & 0xf) - (value & 0xf) - carry;
 
       let ah = (this.Registers.A >>> 4) - (value >>> 4);
       
@@ -324,12 +324,15 @@ export default class cpu6502 {
 
     let bytes = new Uint8Array();
     let lines = source.split("\n");
+    let pc: number = 0;   // program counter
+    let labels = {} // branching labels
 
     // remove comments
     lines.forEach(line => {
       let code = line.split(';')[0].trim().toUpperCase();
       if (code !== "") {
-        let newBytes = this.AssembleLine(code);
+        let newBytes = this.AssembleLine(code, pc, labels);
+        pc += newBytes.length;
         var mergedArray = new Uint8Array(bytes.length + newBytes.length);
         mergedArray.set(bytes);
         mergedArray.set(newBytes, bytes.length);
@@ -359,7 +362,7 @@ export default class cpu6502 {
   // -------------------------------
   // Assembles 1 line.
   // -------------------------------
-  public AssembleLine(line: string): Uint8Array {
+  public AssembleLine(line: string, pc: number, labels: { [name: string]: number; }): Uint8Array {
 
     let arr = new Uint8Array();
     console.log(line);
@@ -378,12 +381,26 @@ export default class cpu6502 {
         }
         operand = operand.toUpperCase().trim();
         let instruction = groups["instruction"].toUpperCase().trim();
-        var addressModeResult = AddressMode.Parse(operand);
+        let label = groups["label"];
+
+        // add label?
+        if (typeof (label) !== "undefined" && !label) {
+          label = label.toUpperCase().trim();
+          if (labels.hasOwnProperty(label)) {
+            throw new Error(`Label ${label} already exists in code.`);
+          }
+          // add label
+          labels[label] = pc;
+        }
+
+        var addressModeResult = AddressMode.Parse(operand, labels);
 
         let bytes = addressModeResult.AddressMode.bytes;
         let addressMode = addressModeResult.AddressMode.mode;
         let value = addressModeResult.Value;
 
+        // If the address mode is relative (branching), then the value
+        // is relative 
         // Find op code
         let opCodes = this.opCodes6502Array.filter(a => a.rule.Instruction === instruction && a.rule.AddressMode === addressMode);
 
