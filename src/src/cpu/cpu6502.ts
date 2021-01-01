@@ -595,7 +595,7 @@ export default class cpu6502 {
     0x71: new OpCodeGenRule({ instruction: "ADC", addressMode: "ind,Y", operation: "cpu.Registers.A = cpu.adc(OPERAND);", affectNFlag: true, affectZFlag: true }),
     0x75: new OpCodeGenRule({ instruction: "ADC", addressMode: "zpg,X", operation: "cpu.Registers.A = cpu.adc(OPERAND);", affectNFlag: true, affectZFlag: true }),
     0x76: new OpCodeGenRule({ instruction: "ROR", addressMode: "zpg,X", operation: "OPERAND = rotate(OPERAND, true, true);", affectNFlag: true, affectZFlag: true, write: true }),
-    //0x78: "SEI impl",
+    0x78: new OpCodeGenRule({ instruction: "SEI", addressMode: "impl", operation: "cpu.Registers.P.Set(ProcessorStatusFlag.Interrupt);" }),
     0x79: new OpCodeGenRule({ instruction: "ADC", addressMode: "abs,Y", operation: "cpu.Registers.A = cpu.adc(OPERAND);", affectNFlag: true, affectZFlag: true }),
     0x7D: new OpCodeGenRule({ instruction: "ADC", addressMode: "abs,X", operation: "cpu.Registers.A = cpu.adc(OPERAND);", affectNFlag: true, affectZFlag: true }),
     0x7E: new OpCodeGenRule({ instruction: "ROR", addressMode: "abs,X", operation: "OPERAND = rotate(OPERAND, true, true);", affectNFlag: true, affectZFlag: true, write: true }),
