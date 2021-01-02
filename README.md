@@ -71,7 +71,7 @@ Additionally, I've had to configure Jest so that it is able to transform ts file
 
 An important aspect of automated testing, is the ability to step through tests. I've followed instructions from https://jestjs.io/docs/en/troubleshooting and have created a launch.json file in VSCode:
 
-``` json
+```json
 {
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
@@ -89,9 +89,8 @@ An important aspect of automated testing, is the ability to step through tests. 
         }
     ]
 }
-
-To step through tests, you'll need to run **Run / Start Debugging** (or F5), instead of the usual npm script. You can then place `debugger` statements in your code etc.
 ```
+To step through tests, you'll need to run **Run / Start Debugging** (or F5), instead of the usual npm script. You can then place `debugger` statements in your code etc.
 
 ## Steps in Writing an Emulator
 
