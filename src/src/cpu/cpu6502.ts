@@ -364,8 +364,6 @@ export default class cpu6502 {
   // -------------------------------
   public AssembleLine(line: string, pc: number, labels: { [name: string]: number; }): Uint8Array {
 
-    debugger
-
     let arr = new Uint8Array();
 
     if (!line) {
@@ -386,8 +384,9 @@ export default class cpu6502 {
         let instruction = groups["instruction"];
 
         // add label?
-        if (typeof (label) !== "undefined" && !label) {
+        if (typeof (label) !== "undefined" && label) {
           label = label.toUpperCase().trim();
+          label = label.substr(0, label.length - 1);  // remove ':'
           if (labels.hasOwnProperty(label)) {
             throw new Error(`Label ${label} already exists in code.`);
           }

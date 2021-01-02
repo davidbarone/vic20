@@ -24,7 +24,7 @@ STA $0201
 LDA #$08
 STA $0202
 `, expected: 'A9 01 8D 00 02 A9 05 8D 01 02 A9 08 8D 02 02'
-    }/*,
+    },
     {
         input: `
     LDX #$08
@@ -36,12 +36,13 @@ decrement:
     STX $0201
     BRK        `
         , expected: 'a2 08 ca 8e 00 02 e0 03 d0 f8 8e 01 02 00'
-    }*/
+    }
 ];
 
 test('Assemble', () => {
     for (let test of AssemblerTests) {
         let cpu = new cpu6502(new Memory());
+        debugger
         let actual = cpu.Assemble(test.input);
         expect(cpu.ToHex(actual)).toEqual(test.expected);
     }
