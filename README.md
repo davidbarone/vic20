@@ -71,7 +71,7 @@ Additionally, I've had to configure Jest so that it is able to transform ts file
 
 An important aspect of automated testing, is the ability to step through tests. I've followed instructions from https://jestjs.io/docs/en/troubleshooting and have created a launch.json file in VSCode:
 
-```json
+```
 {
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
