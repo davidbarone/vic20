@@ -364,24 +364,26 @@ export default class cpu6502 {
   // -------------------------------
   public AssembleLine(line: string, pc: number, labels: { [name: string]: number; }): Uint8Array {
 
-    let arr = new Uint8Array();
-    console.log(line);
+    debugger
 
+    let arr = new Uint8Array();
+
+    if (!line) {
+      // nothing on line.
+      return new Uint8Array([]);
+    }
+    
     // Basic regex to parse line
-    let re = /^(?<label>[A-Za-z][A-Za-z0-9_]*[:])*[\s]*(?<instruction>[A-Za-z]{3})(?<operand>.*)*$/;
+    let re = /^(?<label>[A-Za-z][A-Za-z0-9_]*[:])*[\s]*(?<instruction>[A-Za-z]{3})*(?<operand>.*)*$/;
     let results = line.match(re);
     if (results == null || typeof (results) == "undefined") {
       throw new Error("Invalid format");
     } else {
       let groups = results.groups;
       if (groups) {
-        let operand = (groups["operand"]);
-        if (typeof (operand) == "undefined") {
-          operand = "";
-        }
-        operand = operand.toUpperCase().trim();
-        let instruction = groups["instruction"].toUpperCase().trim();
         let label = groups["label"];
+        let operand = groups["operand"];
+        let instruction = groups["instruction"];
 
         // add label?
         if (typeof (label) !== "undefined" && !label) {
@@ -393,18 +395,25 @@ export default class cpu6502 {
           labels[label] = pc;
         }
 
-        var addressModeResult = AddressMode.Parse(operand, labels);
+        // Process instruction on line?
+        if (typeof (instruction) !== "undefined" && instruction) {
+          instruction = instruction.toUpperCase().trim();
+          if (typeof (operand) == "undefined") {
+            operand = "";
+          }
+          operand = operand.toUpperCase().trim();
 
-        let bytes = addressModeResult.AddressMode.bytes;
-        let addressMode = addressModeResult.AddressMode.mode;
-        let value = addressModeResult.Value;
+          // Address mode?
+          var addressModeResult = AddressMode.Parse(operand, labels);
+          let bytes = addressModeResult.AddressMode.bytes;
+          let addressMode = addressModeResult.AddressMode.mode;
+          let value = addressModeResult.Value;
 
-        // If the address mode is relative (branching), then the value
-        // is relative 
-        // Find op code
-        let opCodes = this.opCodes6502Array.filter(a => a.rule.Instruction === instruction && a.rule.AddressMode === addressMode);
-
-        if (opCodes.length > 0) {
+          // If the address mode is relative (branching), then the value
+          // is relative 
+          // Find op code
+          let opCodes = this.opCodes6502Array.filter(a => a.rule.Instruction === instruction && a.rule.AddressMode === addressMode);
+          if (opCodes.length > 0) {
             // Found the op code
             switch (bytes) {
               case 1:
@@ -422,11 +431,20 @@ export default class cpu6502 {
               default:
                 throw new Error("Op code should be 1,2 or 3 bytes long.");
             }
+          } else {
+            throw new Error("Cannot find single op code");
+          }
         } else {
-          throw new Error("Cannot find single op code");
+          // No instruction on this line.
+          if (operand) {
+            throw new Error("Invalid format - operand specified without instruction.");
+          } else {
+            // Only a label specified. Don't return any bytes of code
+            return new Uint8Array([]);
+          }
         }
       } else {
-        throw new Error("Invalid format");
+        throw new Error("Invalid format.");
       }
     }
   }
