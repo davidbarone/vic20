@@ -9,7 +9,8 @@ interface AddressModeRule {
     mode: string,
     desc: string,
     bytes: number,
-    pattern: RegExp
+    pattern: RegExp,
+    format: string
 }
 
 class AddressMode {
@@ -19,19 +20,19 @@ class AddressMode {
     private static label: string = '[A-Za-z][A-Za-z0-9_]*'  // can be label or defined symbol
 
     private static addressModes: Array<AddressModeRule> = [
-        { mode: "A", desc: "Accumulator", bytes: 2, pattern: new RegExp('^[A]$') },
-        { mode: "#", desc: "Immediate", bytes: 2, pattern: new RegExp(`^[#](?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))$`) }, // 8 bit
-        { mode: "zpg", desc: "ZeroPage", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))$`) },  // 8 bit
-        { mode: "zpg,X", desc: "ZeroPageX", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))(,X)$`) },
-        { mode: "zpg,Y", desc: "ZeroPageY", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))(,Y)$`) },
-        { mode: "rel", desc: "Relative", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}|${AddressMode.label}))$`) }, // 8 bit
-        { mode: "abs", desc: "Absolute", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))$`) },
-        { mode: "abs,X", desc: "AbsoluteX", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,X)$`) },  // 16 bit
-        { mode: "abs,Y", desc: "AbsoluteY", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,Y)$`) },  // 16 bit
-        { mode: "ind", desc: "Indirect", bytes: 3, pattern: new RegExp(`^[(](?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))[)]$`) },
-        { mode: "X,ind", desc: "IndexedIndirect", bytes: 2, pattern: new RegExp(`^[(](?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,X[)])$`) },
-        { mode: "ind,Y", desc: "IndirectIndexed", bytes: 2, pattern: new RegExp(`^[(](?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))([)],Y)$`) },
-        { mode: "impl", desc: "Implied", bytes: 1, pattern: new RegExp("^$") }
+        { mode: "A", desc: "Accumulator", bytes: 2, pattern: new RegExp('^[A]$'), format: 'A' },
+        { mode: "#", desc: "Immediate", bytes: 2, pattern: new RegExp(`^[#](?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))$`), format: '' }, // 8 bit
+        { mode: "zpg", desc: "ZeroPage", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))$`), format: '#${value}' },  // 8 bit
+        { mode: "zpg,X", desc: "ZeroPageX", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))(,X)$`), format: '${value},X' },
+        { mode: "zpg,Y", desc: "ZeroPageY", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))(,Y)$`), format: '' },
+        { mode: "rel", desc: "Relative", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}|${AddressMode.label}))$`), format: '' }, // 8 bit
+        { mode: "abs", desc: "Absolute", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))$`), format: '' },
+        { mode: "abs,X", desc: "AbsoluteX", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,X)$`), format: '' },  // 16 bit
+        { mode: "abs,Y", desc: "AbsoluteY", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,Y)$`), format: '' },  // 16 bit
+        { mode: "ind", desc: "Indirect", bytes: 3, pattern: new RegExp(`^[(](?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))[)]$`), format: '' },
+        { mode: "X,ind", desc: "IndexedIndirect", bytes: 2, pattern: new RegExp(`^[(](?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,X[)])$`), format: '' },
+        { mode: "ind,Y", desc: "IndirectIndexed", bytes: 2, pattern: new RegExp(`^[(](?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))([)],Y)$`), format: '' },
+        { mode: "impl", desc: "Implied", bytes: 1, pattern: new RegExp("^$"), format: '' }
     ];
 
     private static ParseNumber(input: string, labels: { [name: string]: number; }, pc: number): number {
@@ -52,6 +53,17 @@ class AddressMode {
                 return number;
             }
         }
+    }
+
+    // ---------------------------------------------
+    // Returns an address mode by name
+    // ---------------------------------------------
+    static GetRule(mode: string): AddressModeRule {
+        let modes = this.addressModes.filter(am => am.mode === mode);
+        if (modes.length !== 1) {
+            throw new Error(`Invalid address mode: ${mode}`);
+        }
+        return modes[0];
     }
 
     // ------------------------------------

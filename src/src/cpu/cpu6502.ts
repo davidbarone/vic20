@@ -316,6 +316,38 @@ export default class cpu6502 {
     // TODO
   }
 
+  // ---------------------------
+  // Disassembles the 
+  public Disassemble(offset: number): { Disassembly: string; NextInstruction: number; } {
+
+    let byte = this.Memory.ReadByte(offset);
+    let opCode = this.opCodes6502[byte];
+
+    if (!opCode) {
+      return {
+        Disassembly: '???',
+        NextInstruction: offset + 1
+      };
+    } else {
+      // valid opcode
+      let addressMode = AddressMode.GetRule(opCode.AddressMode);
+      let operandLo: number = 0;
+      let operandHi: number = 0;
+      if (opCode.AddressMode.length > 1) {
+        operandLo = this.Memory.ReadByte(offset + 1);
+      }
+      if (opCode.AddressMode.length > 2) {
+        operandHi = this.Memory.ReadByte(offset + 2);
+      }
+      //
+      let value = this.ToHex(new Uint8Array([operandLo, operandHi])).replace(" ", "");
+      addressMode.format.replace("{value}", value)
+
+    }
+
+    throw new Error("test");
+  }
+
   // ---------------------------------
   // Assembles 6502 assembly code
   // to 6502 machine code.
