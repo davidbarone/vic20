@@ -341,11 +341,10 @@ export default class cpu6502 {
       }
       //
       let value = this.ToHex(new Uint8Array([operandLo, operandHi])).replace(" ", "");
-      addressMode.format.replace("{value}", value)
-
+      return {
+        Disassembly: addressMode.format.replace("{value}", value),
+        NextInstruction: offset + opCode.AddressMode.length
     }
-
-    throw new Error("test");
   }
 
   // ---------------------------------
