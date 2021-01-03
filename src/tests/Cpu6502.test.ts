@@ -36,6 +36,26 @@ decrement:
     STX $0201
     BRK        `
         , expected: 'A2 08 CA 8E 00 02 E0 03 D0 F8 8E 01 02 00'
+    },
+    {
+        input: `  
+        LDX #$00
+        LDY #$00
+      firstloop:
+        TXA
+        STA $0200,Y
+        PHA
+        INX
+        INY
+        CPY #$10
+        BNE firstloop ;loop until Y is $10
+      secondloop:
+        PLA
+        STA $0200,Y
+        INY
+        CPY #$20      ;loop until Y is $20
+        BNE secondloop`,
+        expected: 'A2 00 A0 00 8A 99 00 02 48 E8 C8 C0 10 D0 F5 68 99 00 02 C8 C0 20 D0 F7'
     }
 ];
 
