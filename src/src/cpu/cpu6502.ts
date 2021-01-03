@@ -403,7 +403,7 @@ export default class cpu6502 {
           operand = operand.toUpperCase().trim();
 
           // Address mode?
-          var addressModeResult = AddressMode.Parse(operand, labels);
+          var addressModeResult = AddressMode.Parse(operand, labels, pc);
           let bytes = addressModeResult.AddressMode.bytes;
           let addressMode = addressModeResult.AddressMode.mode;
           let value = addressModeResult.Value;
