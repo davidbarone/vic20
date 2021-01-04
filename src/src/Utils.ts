@@ -1,3 +1,9 @@
+// --------------------------------
+// Utils
+//
+// Collection of useful utility
+// functions.
+// --------------------------------
 class Utils {
 
     static LUT_HEX_4b: Array<string> = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
@@ -31,9 +37,9 @@ class Utils {
     // or word.
     // ---------------------------
     public static NumberToHex(value: number): string {
-        let hex: string;
+        let hex: string = "";
         while (true) {
-            hex = Utils.LUT_HEX_8b[value & 0xff];
+            hex += Utils.LUT_HEX_8b[value & 0xff];
             value = value >> 8;
             if (value === 0) {
                 break;
@@ -47,7 +53,7 @@ class Utils {
     //
     // Converts a UInt8Array to hex
     // string
-    public UInt8ArrayToHex(buffer: Uint8Array, padding: string = ' ') {
+    public static UInt8ArrayToHex(buffer: Uint8Array, padding: string = ' ') {
         let out = '';
         for (let idx = 0, edx = buffer.length; idx < edx; idx++) {
             out += Utils.NumberToHex(buffer[idx]) + padding;
@@ -61,7 +67,7 @@ class Utils {
     // Converts a number (e.g. 16-bit address)
     // into corresponding bytes
     // ----------------------------------------
-    public NumberToUInt8Array(value: number): Uint8Array {
+    public static NumberToUInt8Array(value: number): Uint8Array {
         let bytes: Array<number> = new Array();
 
         while (true) {
