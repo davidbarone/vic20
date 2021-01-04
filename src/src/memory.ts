@@ -92,30 +92,31 @@ export default class Memory {
         this.Mem = new Uint8Array(this.Size);
         this.ReadFunc = new Array(this.Size);
         this.WriteFunc = new Array(this.Size);
+        this.Reset();
     }
 
     // I/O functions for different parts of memory
-    private ReadMem(offset: number): number {
-        return this.Mem[offset];
+    private ReadMem(mem: Uint8Array, offset: number): number {
+        return mem[offset];
     }
         
-    private ReadNull(offset: number): number {
-        return this.Mem[offset];
+    private ReadNull(mem: Uint8Array, offset: number): number {
+        return mem[offset];
     }
 
-    private ReadVia1(offset: number): number {
+    private ReadVia1(mem: Uint8Array, offset: number): number {
         return 0;
     }
 
-    private ReadVia2(offset: number): number {
+    private ReadVia2(mem: Uint8Array, offset: number): number {
         return 0;
     }
 
-    private WriteMem(offset: number, value: number): void {
-        this.Mem[offset] = value;
+    private WriteMem(mem: Uint8Array, offset: number, value: number): void {
+        mem[offset] = value;
     }
         
-    private WriteNull(offset: number, value: number): void {
+    private WriteNull(mem: Uint8Array, offset: number, value: number): void {
         
     }
 
@@ -130,7 +131,7 @@ export default class Memory {
 
     // Reads a byte of memory
     ReadByte(offset: number): number {
-        return this.ReadFunc[offset](offset);
+        return this.ReadFunc[offset](this.Mem, offset);
     }
 
     // Reads a word of memory (little-endian)
@@ -142,7 +143,7 @@ export default class Memory {
 
     // Writes a byte of memory
     WriteByte(offset: number, value: number): void {
-        this.WriteFunc[offset](offset, value);
+        this.WriteFunc[offset](this.Mem, offset, value);
     }
 
 }

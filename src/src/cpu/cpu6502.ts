@@ -331,28 +331,31 @@ export default class cpu6502 {
 
     let byte = this.Memory.ReadByte(offset);
     let opCode = this.opCodes6502[byte];
+    console.log(byte);
 
     if (!opCode) {
       return {
         Disassembly: '???',
         NextInstruction: offset + 1
-      };
+      }
     } else {
       // valid opcode
       let addressMode = AddressMode.GetRule(opCode.AddressMode);
       let operandLo: number = 0;
       let operandHi: number = 0;
-      if (opCode.AddressMode.length > 1) {
+      let value: string = ""
+      if (addressMode.bytes > 1) {
         operandLo = this.Memory.ReadByte(offset + 1);
+        value = this.ToHex(new Uint8Array([operandLo])).replace(" ", "");
       }
-      if (opCode.AddressMode.length > 2) {
+      if (addressMode.bytes > 2) {
         operandHi = this.Memory.ReadByte(offset + 2);
+        value = this.ToHex(new Uint8Array([operandLo, operandHi])).replace(" ", "");
       }
-      //
-      let value = this.ToHex(new Uint8Array([operandLo, operandHi])).replace(" ", "");
       return {
         Disassembly: addressMode.format.replace("{value}", value),
         NextInstruction: offset + opCode.AddressMode.length
+      }
     }
   }
 
@@ -382,6 +385,7 @@ export default class cpu6502 {
 
     return bytes;
   }
+
 
   public ToHex(buffer: Uint8Array) {
 
