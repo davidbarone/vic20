@@ -316,6 +316,15 @@ export default class cpu6502 {
     // TODO
   }
 
+  // -------------------------------------------
+  // Loads image / data into memory
+  // -------------------------------------------
+  public Load(offset: number, data: Uint8Array): void {
+    for (let i = 0; i < data.length; i++) {
+      this.Memory.WriteByte(offset + i, data[i])
+    }
+  }
+
   // ---------------------------
   // Disassembles the 
   public Disassemble(offset: number): { Disassembly: string; NextInstruction: number; } {
