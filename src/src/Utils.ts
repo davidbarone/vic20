@@ -39,7 +39,7 @@ class Utils {
     public static NumberToHex(value: number): string {
         let hex: string = "";
         while (true) {
-            hex += Utils.LUT_HEX_8b[value & 0xff];
+            hex = Utils.LUT_HEX_8b[value & 0xff] + hex;
             value = value >> 8;
             if (value === 0) {
                 break;

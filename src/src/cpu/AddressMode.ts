@@ -24,14 +24,14 @@ class AddressMode {
         { mode: "#", desc: "Immediate", bytes: 2, pattern: new RegExp(`^[#](?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))$`), format: '#${value}' }, // 8 bit
         { mode: "zpg", desc: "ZeroPage", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))$`), format: '${value}' },  // 8 bit
         { mode: "zpg,X", desc: "ZeroPageX", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))(,X)$`), format: '${value},X' },
-        { mode: "zpg,Y", desc: "ZeroPageY", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))(,Y)$`), format: '' },
-        { mode: "rel", desc: "Relative", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}|${AddressMode.label}))$`), format: '' }, // 8 bit
-        { mode: "abs", desc: "Absolute", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))$`), format: '' },
-        { mode: "abs,X", desc: "AbsoluteX", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,X)$`), format: '' },  // 16 bit
-        { mode: "abs,Y", desc: "AbsoluteY", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,Y)$`), format: '' },  // 16 bit
-        { mode: "ind", desc: "Indirect", bytes: 3, pattern: new RegExp(`^[(](?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))[)]$`), format: '' },
-        { mode: "X,ind", desc: "IndexedIndirect", bytes: 2, pattern: new RegExp(`^[(](?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,X[)])$`), format: '' },
-        { mode: "ind,Y", desc: "IndirectIndexed", bytes: 2, pattern: new RegExp(`^[(](?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))([)],Y)$`), format: '' },
+        { mode: "zpg,Y", desc: "ZeroPageY", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))(,Y)$`), format: '${value},Y' },
+        { mode: "rel", desc: "Relative", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}|${AddressMode.label}))$`), format: '${value}' }, // 8 bit
+        { mode: "abs", desc: "Absolute", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))$`), format: '${value}' },
+        { mode: "abs,X", desc: "AbsoluteX", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,X)$`), format: '${value},X' },  // 16 bit
+        { mode: "abs,Y", desc: "AbsoluteY", bytes: 3, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,Y)$`), format: '${value},Y' },  // 16 bit
+        { mode: "ind", desc: "Indirect", bytes: 3, pattern: new RegExp(`^[(](?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))[)]$`), format: '(${value})' },
+        { mode: "X,ind", desc: "IndexedIndirect", bytes: 2, pattern: new RegExp(`^[(](?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))(,X[)])$`), format: '(${value},X)' },
+        { mode: "ind,Y", desc: "IndirectIndexed", bytes: 2, pattern: new RegExp(`^[(](?<value>(${AddressMode.decimal}|${AddressMode.hexWord}))([)],Y)$`), format: '(${value}),Y' },
         { mode: "impl", desc: "Implied", bytes: 1, pattern: new RegExp("^$"), format: '' }
     ];
 

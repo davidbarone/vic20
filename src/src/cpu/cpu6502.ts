@@ -5,6 +5,7 @@ import Memory from "../Memory";
 import { ProcessorStatusFlag } from "./ProcessorStatusFlag";
 import Registers from "./Registers";
 import AddressMode from "./AddressMode";
+import Utils from "../Utils"
 
 // **********************************
   //
@@ -325,16 +326,36 @@ export default class cpu6502 {
     }
   }
 
-  // ---------------------------
-  // Disassembles the 
-  public Disassemble(offset: number): { Disassembly: string; NextInstruction: number; } {
+  // ----------------------------------
+  // Disassembles block of instructions
+  // ----------------------------------
+  public Disassemble(offset: number, limit: number): Array<{ Address: string, Bytes: string, Disassembly: string; NextInstruction: number; }> {
 
+    let results: Array<{ Address: string, Bytes: string, Disassembly: string; NextInstruction: number; }> = new Array();
+    while (limit > 0) {
+      let result = this.DisassembleSingle(offset);
+      results.push(result);
+      limit--;
+      offset = result.NextInstruction;
+    }
+    return results;
+  }
+  
+  // -------------------------------
+  // Disassembles single instruction
+  // -------------------------------
+  public DisassembleSingle(offset: number): { Address: string, Bytes: string, Disassembly: string; NextInstruction: number; } {
+
+    let bytes: Array<number> = new Array<number>();
     let byte = this.Memory.ReadByte(offset);
+    bytes.push(byte);
     let opCode = this.opCodes6502[byte];
     console.log(byte);
 
     if (!opCode) {
       return {
+        Address: Utils.NumberToHex(offset),
+        Bytes: Utils.UInt8ArrayToHex(new Uint8Array([byte])),
         Disassembly: '???',
         NextInstruction: offset + 1
       }
@@ -343,18 +364,35 @@ export default class cpu6502 {
       let addressMode = AddressMode.GetRule(opCode.AddressMode);
       let operandLo: number = 0;
       let operandHi: number = 0;
-      let value: string = ""
+      let value: number = 0;
+      let valueHex: string = ""
       if (addressMode.bytes > 1) {
         operandLo = this.Memory.ReadByte(offset + 1);
-        value = this.ToHex(new Uint8Array([operandLo])).replace(" ", "");
+        value = operandLo;
+        bytes.push(operandLo);
       }
       if (addressMode.bytes > 2) {
         operandHi = this.Memory.ReadByte(offset + 2);
-        value = this.ToHex(new Uint8Array([operandLo, operandHi])).replace(" ", "");
+        value = (operandHi << 8) + operandLo;
+        bytes.push(operandHi);
       }
+
+      // For relative address mode, we replace the relative operand with an 
+      // absolute 16-bit memory value. Normally, the operand would be a
+      // label anyway.
+      if (addressMode.mode === "rel") {
+        let valueUint8 = (value & 0xff);
+        let valueSigned = valueUint8 > 0x7f ? valueUint8 - 0x100 : valueUint8;
+        value = offset + addressMode.bytes + valueSigned;
+      }
+
+      valueHex = Utils.NumberToHex(value);
+      
       return {
-        Disassembly: addressMode.format.replace("{value}", value),
-        NextInstruction: offset + opCode.AddressMode.length
+        Address: Utils.NumberToHex(offset),
+        Bytes: Utils.UInt8ArrayToHex(new Uint8Array(bytes)),
+        Disassembly: `${opCode.Instruction} ${addressMode.format.replace("{value}", valueHex)}`.trim(),
+        NextInstruction: offset + addressMode.bytes
       }
     }
   }
