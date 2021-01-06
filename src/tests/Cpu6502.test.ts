@@ -1,5 +1,6 @@
 import cpu6502 from "../src/cpu/Cpu6502";
 import Memory from "../src/Memory";
+import Utils from "../src/Utils";
 
 let parseLineTests: Array<{ input: string, expected: Uint8Array }> = [
     { input: "CLC", expected: new Uint8Array([0x18]) },
@@ -63,6 +64,6 @@ test('Assemble', () => {
     for (let test of AssemblerTests) {
         let cpu = new cpu6502(new Memory());
         let actual = cpu.Assemble(test.input);
-        expect(cpu.ToHex(actual)).toEqual(test.expected);
+        expect(Utils.UInt8ArrayToHex(actual)).toEqual(test.expected);
     }
 });
