@@ -350,7 +350,6 @@ export default class cpu6502 {
     let byte = this.Memory.ReadByte(offset);
     bytes.push(byte);
     let opCode = this.opCodes6502[byte];
-    console.log(byte);
 
     if (!opCode) {
       return {
