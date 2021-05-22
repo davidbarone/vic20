@@ -1,11 +1,9 @@
 import cpu6502 from "./cpu/Cpu6502";
 import Memory from "./Memory";
+import { Vic20 } from "./Vic20"
 
 declare global {
-  interface Window { cpu6502: any; }
+  interface Window { vic20: any; }
 }
 
-window.cpu6502 = cpu6502 || {};
-
-new cpu6502(new Memory()).hello('sfdds');
-
+window.vic20 = Vic20 || {};
