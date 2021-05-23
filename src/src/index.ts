@@ -1,5 +1,5 @@
-import cpu6502 from "./cpu/Cpu6502";
-import Memory from "./Memory";
+import cpu6502 from "./Cpu/Cpu6502";
+import Memory from "./Memory/Memory";
 import { Vic20 } from "./Vic20"
 
 declare global {

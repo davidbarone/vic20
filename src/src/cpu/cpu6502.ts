@@ -1,165 +1,165 @@
 import OpCodeGenRule from "./OpCodeGenRule";
 import OpCodeGenParams from "./OpCodeGenParams";
 import ProcessorStatus from "./ProcessorStatus";
-import Memory from "../Memory";
+import Memory from "../Memory/Memory";
 import { ProcessorStatusFlag } from "./ProcessorStatusFlag";
 import Registers from "./Registers";
 import AddressMode from "./AddressMode";
 import Utils from "../Utils"
 
 // **********************************
-  //
-  // ==========
-  // Cpu6502.ts
-  // ==========
-  // 
-  // The 6502 has 56 different instructions and 13 addressing modes. There are 151 defined op codes.
-  //
-  // The 56 instructions are:
-  //
-  // Arithmetic / Logic Instructions:
-  // --------------------------------
-  // ADC - Add with carry
-  // AND - Bitwise AND with accumulator
-  // ASL - Arithmetic shift left
-  // BIT - Test bits
-  // CMP - Compare accumulator
-  // CPX - Compare X register
-  // CPY - Compare Y register
-  // DEC - Decrement memory
-  // EOR - Bitwise exclusive OR
-  // INC - Increment memory
-  // LSR - Logical shift right
-  // NOP - No operation
-  // ORA - Bitwise OR with accumulator
-  // ROL - Rotate left
-  // ROR - Rotate right
-  // SBC - Subtract with carry
-  //
-  // Loading Instructions:
-  // ---------------------
-  // LDA - Load accumulator
-  // LDX - Load X register
-  // LDY - Load Y register
-  //
-  // Store Instructions:
-  // ---------------------
-  // STA - Store accumulator
-  // STX - Store X register
-  // STY - Store Y register
-  //
-  // Branching Instructions:
-  // -----------------------
-  // BPL - Branch on plus
-  // BMI - Branch on minus
-  // BVC - Branch on overflow clear
-  // BVS - Branch on overflow set
-  // BCC - Branch on carry clear
-  // BCS - Branch on carry set
-  // BNE - Branch on not equal
-  // BEQ - Branch on equal
-  //
-  // Jump Instructions:
-  // ------------------
-  // JMP - Jump
-  // JSR - Jump to subroutine
-  // RTI - Return from interrupt
-  // RTS - Return from subroutine
-  // BRK - Break
-  //
-  // Flag Instructions:
-  // ------------------
-  // CLC - Clear carry
-  // SEC - Set carry
-  // CLI - Clear interrupt
-  // SEI - Set interrupt
-  // CLV - Clear overflow
-  // CLD - Clear decimal
-  // SED - Set decimal
-  //
-  // Register Instructions:
-  // ----------------------
-  // TAX - Transfer A to X
-  // TXA - Transfer X to A
-  // DEX - Decrement X
-  // INX - Increment X
-  // TAY - Transfer A to Y
-  // TYA - Transfer Y to A
-  // DEY - Decrement Y
-  // INY - Increment Y
-  //
-  // Stack Instructions:
-  // -------------------
-  // TXS - Transfer X to SP
-  // TSX - Transfer SP to X
-  // PHA - Push accumulator
-  // PLA - Pull accumulator
-  // PHP - Push P (flags)
-  // PLP - Pull P (flags)
-  //
-  // =============================================================================
-  // Addressing Modes (https://www.masswerk.at/6502/6502_instruction_set.html#DEX)
-  // =============================================================================
-  // 
-  // Key   Mode                Example     Description
-  // ----- ------------------- ----------- -------------------------------------------------------------
-  // A     Accumulator         OPC A       operand is AC (implied single byte instruction)
-  // abs   absolute            OPC $LLHH   operand is address $HHLL *
-  // abs,X absolute, X-indexed OPC $LLHH,X operand is address; effective address is address incremented by X with carry **
-  // abs,Y absolute, Y-indexed OPC $LLHH,Y operand is address; effective address is address incremented by Y with carry **
-  // #     immediate           OPC #$BB    operand is byte BB
-  // impl  implied             OPC         operand implied
-  // ind   indirect            OPC ($LLHH) operand is address; effective address is contents of word at address: C.w($HHLL)
-  // X,ind X-indexed, indirect OPC ($LL,X) operand is zeropage address; effective address is word in (LL + X, LL + X + 1), inc. without carry: C.w($00LL + X)
-  // ind,Y indirect, Y-indexed OPC ($LL),Y operand is zeropage address; effective address is word in (LL, LL + 1) incremented by Y with carry: C.w($00LL) + Y
-  // rel   relative            OPC $BB     branch target is PC + signed offset BB ***
-  // zpg   zeropage            OPC $LL     operand is zeropage address (hi-byte is zero, address = $00LL)
-  // zpg,X zeropage, X-indexed OPC $LL,X   operand is zeropage address; effective address is address incremented by X without carry **
-  // zpg,Y zeropage, Y-indexed OPC $LL,Y   operand is zeropage address; effective address is address incremented by Y without carry **
-  // 
-  // *   16-bit address words are little endian, lo(w)-byte first, followed by the hi(gh)-byte.
-  // (An assembler will use a human readable, big-endian notation as in $HHLL.)
-  // 
-  // **  The available 16-bit address space is conceived as consisting of pages of 256 bytes each, with
-  // address hi-bytes represententing the page index. An increment with carry may affect the hi-byte
-  // and may thus result in a crossing of page boundaries, adding an extra cycle to the execution.
-  // Increments without carry do not affect the hi-byte of an address and no page transitions do occur.
-  // Generally, increments of 16-bit addresses include a carry, increments of zeropage addresses don't.
-  // Notably this is not related in any way to the state of the carry bit of the accumulator.
-  // 
-  // *** Branch offsets are signed 8-bit values, -128 ... +127, negative offsets in two's complement.
-  // Page transitions may occur and add an extra cycle to the exucution.
-  // --------------------------------------------------------------------------------------------------------------------------------------------------------
-  //
-  // ==============================
-  // Op Code Size
-  // ==============================
-  //
-  // - Op code = 8 bits long
-  // - Generic form = AAABBCC. AAA and CC defined the op code. BBB defines addressing mode.
-  // - Op code may require zero, one or two additional bytes for operands.
-  // - Operand stored in little-endian format.
-  //
-  // =============
-  // Bibliography:
-  // =============
-  //
-  // https://www.masswerk.at/6502/6502_instruction_set.html
-  // http://nparker.llx.com/a2/opcodes.html
-  // http://visual6502.org/
-  // http://6502.org/
-  // http://6502.org/tutorials/
-  // https://floooh.github.io/2019/12/13/cycle-stepped-6502.html
-  // https://github.com/mattgodbolt/jsbeeb/blob/master/6502.opcodes.js
-  // https://skilldrick.github.io/easy6502/
-  // https://sites.google.com/site/6502asembly/
-  // http://www.emulator101.com/6502-addressing-modes.html
-  // https://xania.org/201405/jsbeeb-emulating-a-bbc-micro-in-javascript
-  // http://www.obelisk.me.uk/6502/
-  // https://codegolf.stackexchange.com/questions/12844/emulate-a-mos-6502-cpu
-  // https://github.com/amensch/e6502
-  //
-  // **********************************
+//
+// ==========
+// Cpu6502.ts
+// ==========
+// 
+// The 6502 has 56 different instructions and 13 addressing modes. There are 151 defined op codes.
+//
+// The 56 instructions are:
+//
+// Arithmetic / Logic Instructions:
+// --------------------------------
+// ADC - Add with carry
+// AND - Bitwise AND with accumulator
+// ASL - Arithmetic shift left
+// BIT - Test bits
+// CMP - Compare accumulator
+// CPX - Compare X register
+// CPY - Compare Y register
+// DEC - Decrement memory
+// EOR - Bitwise exclusive OR
+// INC - Increment memory
+// LSR - Logical shift right
+// NOP - No operation
+// ORA - Bitwise OR with accumulator
+// ROL - Rotate left
+// ROR - Rotate right
+// SBC - Subtract with carry
+//
+// Loading Instructions:
+// ---------------------
+// LDA - Load accumulator
+// LDX - Load X register
+// LDY - Load Y register
+//
+// Store Instructions:
+// ---------------------
+// STA - Store accumulator
+// STX - Store X register
+// STY - Store Y register
+//
+// Branching Instructions:
+// -----------------------
+// BPL - Branch on plus
+// BMI - Branch on minus
+// BVC - Branch on overflow clear
+// BVS - Branch on overflow set
+// BCC - Branch on carry clear
+// BCS - Branch on carry set
+// BNE - Branch on not equal
+// BEQ - Branch on equal
+//
+// Jump Instructions:
+// ------------------
+// JMP - Jump
+// JSR - Jump to subroutine
+// RTI - Return from interrupt
+// RTS - Return from subroutine
+// BRK - Break
+//
+// Flag Instructions:
+// ------------------
+// CLC - Clear carry
+// SEC - Set carry
+// CLI - Clear interrupt
+// SEI - Set interrupt
+// CLV - Clear overflow
+// CLD - Clear decimal
+// SED - Set decimal
+//
+// Register Instructions:
+// ----------------------
+// TAX - Transfer A to X
+// TXA - Transfer X to A
+// DEX - Decrement X
+// INX - Increment X
+// TAY - Transfer A to Y
+// TYA - Transfer Y to A
+// DEY - Decrement Y
+// INY - Increment Y
+//
+// Stack Instructions:
+// -------------------
+// TXS - Transfer X to SP
+// TSX - Transfer SP to X
+// PHA - Push accumulator
+// PLA - Pull accumulator
+// PHP - Push P (flags)
+// PLP - Pull P (flags)
+//
+// =============================================================================
+// Addressing Modes (https://www.masswerk.at/6502/6502_instruction_set.html#DEX)
+// =============================================================================
+// 
+// Key   Mode                Example     Description
+// ----- ------------------- ----------- -------------------------------------------------------------
+// A     Accumulator         OPC A       operand is AC (implied single byte instruction)
+// abs   absolute            OPC $LLHH   operand is address $HHLL *
+// abs,X absolute, X-indexed OPC $LLHH,X operand is address; effective address is address incremented by X with carry **
+// abs,Y absolute, Y-indexed OPC $LLHH,Y operand is address; effective address is address incremented by Y with carry **
+// #     immediate           OPC #$BB    operand is byte BB
+// impl  implied             OPC         operand implied
+// ind   indirect            OPC ($LLHH) operand is address; effective address is contents of word at address: C.w($HHLL)
+// X,ind X-indexed, indirect OPC ($LL,X) operand is zeropage address; effective address is word in (LL + X, LL + X + 1), inc. without carry: C.w($00LL + X)
+// ind,Y indirect, Y-indexed OPC ($LL),Y operand is zeropage address; effective address is word in (LL, LL + 1) incremented by Y with carry: C.w($00LL) + Y
+// rel   relative            OPC $BB     branch target is PC + signed offset BB ***
+// zpg   zeropage            OPC $LL     operand is zeropage address (hi-byte is zero, address = $00LL)
+// zpg,X zeropage, X-indexed OPC $LL,X   operand is zeropage address; effective address is address incremented by X without carry **
+// zpg,Y zeropage, Y-indexed OPC $LL,Y   operand is zeropage address; effective address is address incremented by Y without carry **
+// 
+// *   16-bit address words are little endian, lo(w)-byte first, followed by the hi(gh)-byte.
+// (An assembler will use a human readable, big-endian notation as in $HHLL.)
+// 
+// **  The available 16-bit address space is conceived as consisting of pages of 256 bytes each, with
+// address hi-bytes represententing the page index. An increment with carry may affect the hi-byte
+// and may thus result in a crossing of page boundaries, adding an extra cycle to the execution.
+// Increments without carry do not affect the hi-byte of an address and no page transitions do occur.
+// Generally, increments of 16-bit addresses include a carry, increments of zeropage addresses don't.
+// Notably this is not related in any way to the state of the carry bit of the accumulator.
+// 
+// *** Branch offsets are signed 8-bit values, -128 ... +127, negative offsets in two's complement.
+// Page transitions may occur and add an extra cycle to the exucution.
+// --------------------------------------------------------------------------------------------------------------------------------------------------------
+//
+// ==============================
+// Op Code Size
+// ==============================
+//
+// - Op code = 8 bits long
+// - Generic form = AAABBCC. AAA and CC defined the op code. BBB defines addressing mode.
+// - Op code may require zero, one or two additional bytes for operands.
+// - Operand stored in little-endian format.
+//
+// =============
+// Bibliography:
+// =============
+//
+// https://www.masswerk.at/6502/6502_instruction_set.html
+// http://nparker.llx.com/a2/opcodes.html
+// http://visual6502.org/
+// http://6502.org/
+// http://6502.org/tutorials/
+// https://floooh.github.io/2019/12/13/cycle-stepped-6502.html
+// https://github.com/mattgodbolt/jsbeeb/blob/master/6502.opcodes.js
+// https://skilldrick.github.io/easy6502/
+// https://sites.google.com/site/6502asembly/
+// http://www.emulator101.com/6502-addressing-modes.html
+// https://xania.org/201405/jsbeeb-emulating-a-bbc-micro-in-javascript
+// http://www.obelisk.me.uk/6502/
+// https://codegolf.stackexchange.com/questions/12844/emulate-a-mos-6502-cpu
+// https://github.com/amensch/e6502
+//
+// **********************************
 
 export default class cpu6502 {
   private Memory: Memory;
@@ -188,17 +188,17 @@ export default class cpu6502 {
     this.Registers.PC = 0;
   }
 
-	private push(value: number): void {
-		this.Memory.WriteByte(this.StackBase + this.Registers.SP, value);
-    
+  private push(value: number): void {
+    this.Memory.WriteByte(this.StackBase + this.Registers.SP, value);
+
     // SP loops round 8 bits
     this.Registers.SP = (this.Registers.SP - 1) & 0xFF;
-	}
-  
-	private pop(): number {
-		this.Registers.SP = (this.Registers.SP + 1) & 0xFF;
-		return this.Memory.ReadByte(this.StackBase + this.Registers.SP);
-	}  
+  }
+
+  private pop(): number {
+    this.Registers.SP = (this.Registers.SP + 1) & 0xFF;
+    return this.Memory.ReadByte(this.StackBase + this.Registers.SP);
+  }
 
   // ------------------------------------
   // Shifts a number to left or right.
@@ -235,17 +235,17 @@ export default class cpu6502 {
       var tempb = (this.Registers.A + value + (this.Registers.P.IsSet(ProcessorStatusFlag.Carry) ? 1 : 0)) & 0xff;
       var al = (this.Registers.A & 0xf) + (value & 0xf) + (this.Registers.P.IsSet(ProcessorStatusFlag.Carry) ? 1 : 0);
       if (al > 9) {
-          al -= 10;
-          al &= 0xf;
-          ah = 1;
+        al -= 10;
+        al &= 0xf;
+        ah = 1;
       }
 
       ah += (this.Registers.A >>> 4) + (value >>> 4);
       this.Registers.P.Clear(ProcessorStatusFlag.Carry)
       if (ah > 9) {
         this.Registers.P.Set(ProcessorStatusFlag.Carry);
-          ah -= 10;
-          ah &= 0xf;
+        ah -= 10;
+        ah &= 0xf;
       }
       return ((al & 0xf) | (ah << 4)) & 0xff;
     } else {
@@ -280,7 +280,7 @@ export default class cpu6502 {
       let al = (this.Registers.A & 0xf) - (value & 0xf) - carry;
 
       let ah = (this.Registers.A >>> 4) - (value >>> 4);
-      
+
       if (al & 0x10) {
         al = (al - 6) & 0xf;
         ah--;
@@ -288,7 +288,7 @@ export default class cpu6502 {
       if (ah & 0x10) {
         ah = (ah - 6) & 0xf;
       }
-      
+
       let result = this.Registers.A - value - carry;
       //this.Registers.P.Negative = !!(result & 0x80);
       //this.Registers.P.Zero = !(result & 0xff);
@@ -306,7 +306,7 @@ export default class cpu6502 {
   // 
   // sets PC
   // ----------------------------------
-  public branch(condition: { (): boolean } , offset: number) {
+  public branch(condition: { (): boolean }, offset: number) {
     if (condition()) {
       this.Registers.PC = (this.Registers.PC + offset) & 0xffff;
     }
@@ -340,7 +340,7 @@ export default class cpu6502 {
     }
     return results;
   }
-  
+
   // -------------------------------
   // Disassembles single instruction
   // -------------------------------
@@ -386,7 +386,7 @@ export default class cpu6502 {
       }
 
       valueHex = Utils.NumberToHex(value);
-      
+
       return {
         Address: Utils.NumberToHex(offset),
         Bytes: Utils.UInt8ArrayToHex(new Uint8Array(bytes)),
@@ -434,7 +434,7 @@ export default class cpu6502 {
       // nothing on line.
       return new Uint8Array([]);
     }
-    
+
     // Basic regex to parse line
     let re = /^(?<label>[A-Za-z][A-Za-z0-9_]*[:])*[\s]*(?<instruction>[A-Za-z]{3})*(?<operand>.*)*$/;
     let results = line.match(re);
@@ -873,7 +873,7 @@ export default class cpu6502 {
     0x7A: "NOP impl",
     0x7B: "RRA abs,Y",
     0x7C: "NOP abs,X",
-    0x7F: "RRA abs,X",    
+    0x7F: "RRA abs,X",
     0x80: "NOP #",
     0x82: "NOP #",
     0x83: "SAX X,ind",
@@ -950,5 +950,5 @@ if (${rule.Write}) {
     alert(str);
   }
 
-}  
+}
 

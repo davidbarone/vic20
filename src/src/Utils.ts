@@ -9,6 +9,22 @@ class Utils {
     static LUT_HEX_4b: Array<string> = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
     static LUT_HEX_8b = new Array(0x100);
 
+    /**
+     * 
+     * @param value 
+     */
+    static ExtractBits(value: number, bitStart: number, bitEnd: number): number {
+        return (value >> bitStart) & ((2 ^ (bitEnd - bitStart + 1)) - 1);
+    }
+
+    static ShiftLeft(value: number, number: number): number {
+        return value << number;
+    }
+
+    static ShiftRight(value: number, number: number): number {
+        return value >> number;
+    }
+
     // -----------------------------
     // Initialize stuff
     // -----------------------------
@@ -60,7 +76,7 @@ class Utils {
         }
         return out.trimEnd();
     }
-    
+
     // ----------------------------------------
     // NumberToArray()
     //

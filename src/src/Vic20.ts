@@ -1,6 +1,6 @@
-import cpu6502 from "./cpu/Cpu6502"
-import Cpu6502 from "./cpu/Cpu6502"
-import Memory from "./Memory"
+import cpu6502 from "./Cpu/Cpu6502"
+import Cpu6502 from "./Cpu/Cpu6502"
+import Memory from "./Memory/Memory"
 import { Vic6560 } from "./Video/Vic6560"
 
 export class Vic20 {
@@ -18,6 +18,14 @@ export class Vic20 {
      */
     init() {
         alert('vic20 init');
+
+    }
+
+    /**
+     * Single computer cycle
+     */
+    cycle() {
+        this.Vic6560.Cycle();
 
     }
 }

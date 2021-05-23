@@ -10,7 +10,7 @@ export class Vic6560 {
     private controlRegisters: Array<number> = new Array(16);
     canvas: HTMLCanvasElement;
     context: CanvasRenderingContext2D | null;
-    config: VideoConfig = new VideoConfig();
+    config: VideoConfig = new VideoConfig(this.controlRegisters);
 
     /**
      * Returns default control register values for PAL
@@ -86,6 +86,13 @@ export class Vic6560 {
             }
         }
     };
+
+    /**
+     * Single cycle of Vic6560
+     */
+    Cycle() {
+
+    }
 
     UpdateVolumes() {
 

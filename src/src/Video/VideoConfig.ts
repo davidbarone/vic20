@@ -1,6 +1,107 @@
+import { ControlRegisterEnum } from "./ControlRegisterEnum"
+
+import Utils from "../Utils"
+
+/**
+ * 9000 ABBBBBBB
+ * 9001 CCCCCCCC
+ * 9002 HDDDDDDD
+ * 9003 GEEEEEEF
+ * 9004 GGGGGGGG
+ * 9005 HHHHIIII
+ * 9006 JJJJJJJJ
+ * 9007 KKKKKKKK
+ * 9008 LLLLLLLL
+ * 9009 MMMMMMMM
+ * 900A NRRRRRRR
+ * 900B OSSSSSSS
+ * 900C PTTTTTTT
+ * 900D QUUUUUUU
+ * 900E WWWWVVVV
+ * 900F XXXXYZZZ
+ * 
+ * A: interlace mode (6560-101 only): 0=off, 1=on
+ *    In this mode, the videochip will draw 525 interlaced lines of 65 cycles
+ *    per line, instead of the 261 non-interlaced lines in the normal mode.
+ *    This bit has no effect on the 6561-101.
+ * B: screen origin X (4 pixels granularity)
+ *    6560-101: at 22 chars/line, the suitable range is 1 to 8
+ *              With 22 chars/line, the value 8 will show only 6 pixels of the
+ *              rightmost column
+ *    6561-101: at 22 chars/line, the suitable range is 5 to 19
+ *              With 22 chars/line, the value 20 will show only 5 pixels of the
+ *              rightmost column
+ * 
+ *    Both:     If the value B+2*D is greater than CYCLES_PER_LINE-4,
+ *              the picture will mix up.
+ *              With the value 0, there is some disturbance on the screen bottom.
+ * C: screen origin Y (2 lines granularity)
+ *    6560-101: suitable range is 14 to 130=(261-1)/2,
+ *              which will display one raster line of text.
+ *    6561-101: suitable range is 14 to 155=312/2-1
+ *    Both:     No wraparound
+ * D: number of video columns
+ *    6560 range: 0-26 makes sense, >31 will be interpreted as 31.
+ *    6561-101: 0-29 makes sense, >32 will be interpreted as 32.
+ * E: number of video rows (0-63)
+ *    6560-101 practical range: 0-29; at C=14, >=30 gives 29 1/8
+ *    6561-101 practical range: 0-35; at C=14, >=36 gives 35.
+ * F: character size (1=8x16, 0=8x8)
+ * G: current raster line ($9004=raster counter b8-b1, $9003 bit 7 = b0)
+ *    Vertical blank is on lines 0 through 27.
+ * H: screen memory location ($9005:7-4 = b13-b10,
+ *                            $9002:7 = b9 of screen and colour memory)
+ * I: character memory location (b13-b10)
+ * * Note that b13 is connected to the inverse of A15 on the Vic-20.
+ * J: light pen X
+ * K: light pen Y
+ * L: paddle X
+ * M: paddle Y
+ * N: bass switch,    R: freq f=Phi2/256/(255-$900a)  NTSC: Phi2=14318181/14 Hz
+ * O: alto switch,    S: freq f=Phi2/128/(255-$900b)  PAL:  Phi2=4433618/4 Hz
+ * P: soprano switch, T: freq f=Phi2/64/(255-$900c)
+ * Q: noise switch,   U: freq f=Phi2/32/(255-$900d)
+ * W: auxiliary colour
+ * V: volume control
+ * X: screen colour
+ * Y: reverse mode
+ * Z: border colour
+ * 
+ * multicolour (character colour b7=1)
+ * 00 = screen colour
+ * 01 = character colour
+ * 10 = border colour
+ * 11 = auxiliary colour
+ * 
+ * Colour codes:
+ * 0 black
+ * 1 white
+ * 2 red
+ * 3 cyan
+ * 4 purple
+ * 5 green
+ * 6 blue
+ * 7 yellow
+ * 8 orange
+ * 9 light orange
+ * a pink
+ * b light cyan
+ * c light purple
+ * d light green
+ * e light blue
+ * f light yellow
+ * 
+ */
 export class VideoConfig {
+    ControlRegisters: Array<number> = new Array(16);
     VideoMatrixColumns: number = 0;
     VideoMatrixRows: number = 0;
+
+    constructor(controlRegisters: Array<number>) {
+        this.ControlRegisters = controlRegisters;
+    }
+
+
 
     /**
      * Color pallette
@@ -24,6 +125,43 @@ export class VideoConfig {
         0xffe0ffff, // light yellow
     ];
 
+    get InterlacedMode(): boolean {
+        return Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR0_SCREEN_ORIGIN_X_COORDINATE], 7, 7) == 1;
+    }
+
+    get ScreenOriginX(): number {
+        return Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR0_SCREEN_ORIGIN_X_COORDINATE], 0, 6);
+    }
+
+    get ScreenOriginY(): number {
+        return Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR1_SCREEN_ORIGIN_Y_COORDINATE], 0, 7);
+    }
+
+    get NumberOfVideoColumns(): number {
+        return Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR2_NO_OF_VIDEO_MATRIX_COLUMNS], 0, 6);
+    }
+
+    get NumberOfVideoRows(): number {
+        return Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR3_NO_OF_VIDEO_MATRIX_ROWS], 1, 6);
+    }
+
+    /**
+     * If set to 1, then 8x16 characters. If set to 0, then 8x8 characters
+     */
+    get CharacterSize(): number {
+        return Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR3_NO_OF_VIDEO_MATRIX_ROWS], 0, 0);
+    }
+
+    get CurrentRasterLine(): number {
+        return Utils.ShiftLeft(
+            Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR4_RASTER_VALUE], 0, 7),
+            1) | Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR3_NO_OF_VIDEO_MATRIX_ROWS], 7, 7)
+    }
+
+
+    ScreenMemoryLocation: number = 0;
+    CharacterMemoryLocation: number = 0;
+    LightPenX: number = 0;
 
     Base: number = 0;
     ColBase: number = 0;
