@@ -158,8 +158,14 @@ export class VideoConfig {
             1) | Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR3_NO_OF_VIDEO_MATRIX_ROWS], 7, 7)
     }
 
+    get ScreenMemoryLocation(): number {
+        return Utils.ShiftLeft(
+            Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR5_BASE_ADDRESS_CONTROL], 4, 7),
+            6) | Utils.ShiftLeft(
+                Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR2_NO_OF_VIDEO_MATRIX_COLUMNS], 7, 7),
+                8);
+    }
 
-    ScreenMemoryLocation: number = 0;
     CharacterMemoryLocation: number = 0;
     LightPenX: number = 0;
 
