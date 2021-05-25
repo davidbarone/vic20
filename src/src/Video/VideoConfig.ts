@@ -166,8 +166,44 @@ export class VideoConfig {
                 8);
     }
 
-    CharacterMemoryLocation: number = 0;
-    LightPenX: number = 0;
+    get CharacterMemoryLocation(): number {
+        return Utils.ShiftLeft(
+            Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR5_BASE_ADDRESS_CONTROL], 0, 3),
+            10
+        );
+    }
+
+    get LightPenX(): number {
+        return Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR6_LIGHT_PEN_HORIZONTAL], 0, 7)
+    }
+
+    get LightPenY(): number {
+        return Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR7_LIGHT_PEN_VERTICAL], 0, 7)
+    }
+
+    get PaddleX(): number {
+        return Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR8_POT_X], 0, 7)
+    }
+
+    get PaddleY(): number {
+        return Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR9_POT_Y], 0, 7)
+    }
+
+    get BaseSwitch(): boolean {
+        return Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRA_F_IN_1], 7, 7) == 1;
+    }
+
+    get AltoSwitch(): boolean {
+        return Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRB_F_IN_2], 7, 7) == 1;
+    }
+
+    get SopranoSwitch(): boolean {
+        return Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRC_F_IN_3], 7, 7) == 1;
+    }
+
+    get NoiseSwitch(): boolean {
+        return Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRD_F_IN_4], 7, 7) == 1;
+    }
 
     Base: number = 0;
     ColBase: number = 0;
