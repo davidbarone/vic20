@@ -18,6 +18,7 @@ export class Vic20 {
      */
     init() {
         alert('vic20 init');
+        this.cycle();
 
     }
 

@@ -14,7 +14,7 @@ class Utils {
      * @param value 
      */
     static ExtractBits(value: number, bitStart: number, bitEnd: number): number {
-        return (value >> bitStart) & ((2 ^ (bitEnd - bitStart + 1)) - 1);
+        return (value >> bitStart) & (Math.pow(2, bitEnd - bitStart + 1) - 1);
     }
 
     static ShiftLeft(value: number, number: number): number {

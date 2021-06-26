@@ -17,6 +17,13 @@ export class Vic6560 {
     ScreenWidth: number = 233;
     ScreenHeight: number = 284;
 
+    _canvasWidth: number = 0;
+    _canvasHeight: number = 0;
+    _data32: Uint32Array = new Uint32Array([]);
+    _dataPtr: number = 0;
+    _imageData: any;
+    _buf8: Uint8ClampedArray = new Uint8ClampedArray();
+
     /**
      * Returns default control register values for PAL
      * @returns 
@@ -28,9 +35,21 @@ export class Vic6560 {
     }
 
     constructor(canvas: HTMLCanvasElement) {
-        alert(canvas.width);
+
         this.canvas = canvas;
         this.context = this.canvas.getContext("2d");
+        this._canvasWidth = this.canvas.width;
+        this._canvasHeight = this.canvas.height;
+
+        if (this.context != null) {
+            this._imageData = this.context.getImageData(0, 0, this._canvasWidth, this._canvasHeight);
+            let data = this._imageData.data;
+            var buf = new ArrayBuffer(this._imageData.data.length);
+            this._buf8 = new Uint8ClampedArray(buf);
+            this._data32 = new Uint32Array(buf);
+        }
+
+
 
         // Initialise control registers
         for (var i = 0; i < 16; i++) {
@@ -49,55 +68,25 @@ export class Vic6560 {
      */
     Write(register: ControlRegisterEnum, value: number) {
         register &= 0xf;    // set 8 bits
-        if (register != ControlRegisterEnum.CR4_RASTER_VALUE) {
-            let preValue = this.controlRegisters[register];
-            this.controlRegisters[register] = value;
-            switch (register) {
-                case ControlRegisterEnum.CR2_NO_OF_VIDEO_MATRIX_COLUMNS:
-                    this.config.Base = ((this.controlRegisters[ControlRegisterEnum.CR5_BASE_ADDRESS_CONTROL] >> 4) << 10) | ((value & 0x80) << 2);
-                    this.config.ColBase = 0x1400 + ((value & 128) << 2);
-                    break;
-                case ControlRegisterEnum.CR3_NO_OF_VIDEO_MATRIX_ROWS:
-                    this.config.CharHeightShift = 3 + (value & 1);
-                    this.controlRegisters[register] = (value & 0x7f) | (preValue & 0x80);
-                    break;
-                case ControlRegisterEnum.CR5_BASE_ADDRESS_CONTROL:
-                    this.config.Base = ((value >> 4) << 10) | ((this.controlRegisters[ControlRegisterEnum.CR2_NO_OF_VIDEO_MATRIX_COLUMNS] & 0x80) << 2);
-                    this.config.CharRom = (value & 0xf) << 10;
-                    break;
-                case ControlRegisterEnum.CRA_F_IN_1:
-                    this.config.MaxValue0 = value < 128 ? -1 : (128 - ((value + 1) & 0x7f)) << 3;
-                    break;
-                case ControlRegisterEnum.CRB_F_IN_2:
-                    this.config.MaxValue1 = value < 128 ? -1 : (128 - ((value + 1) & 0x7f)) << 2;
-                    break;
-                case ControlRegisterEnum.CRC_F_IN_3:
-                    this.config.MaxValue2 = value < 128 ? -1 : (128 - ((value + 1) & 0x7f)) << 1;
-                    break;
-                case ControlRegisterEnum.CRD_F_IN_4:
-                    this.config.MaxValue3 = value < 128 ? -1 : 128 - ((value + 1) & 0x7f);
-                    break;
-                case ControlRegisterEnum.CRE_AMPLITUDE:
-                    this.config.Volume = (value & 0xf) / 64;
-                    this.UpdateVolumes();
-                    this.config.SoundStateOff = this.config.Volume * 0.45;
-                    this.config.MultiColor[3] = this.config.Colors[value >> 4];
-                    break;
-                case 0x0f:
-                    this.config.BorderColor = this.config.Colors[value & 7];
-                    this.config.BackColor = this.config.Colors[value >> 4];
-                    this.config.MultiColor[1] = this.config.BorderColor;
-                    this.config.MultiColor[0] = this.config.BackColor;
-                    break;
-            }
-        }
+        this.controlRegisters[register] = value;
+        alert(value);
     };
 
     /**
      * Single cycle of Vic6560
      */
     Cycle() {
+        alert('cycle');
+        console.log(this.config);
 
+        // update canvas
+        for (let y = 0; y < 10000; y++)
+            this._data32[y] = y * 10000000;
+
+        this._imageData.data.set(this._buf8);
+
+        if (this.context)
+            this.context.putImageData(this._imageData, 0, 0);
 
     }
 
