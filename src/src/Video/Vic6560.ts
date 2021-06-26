@@ -12,6 +12,11 @@ export class Vic6560 {
     context: CanvasRenderingContext2D | null;
     config: VideoConfig = new VideoConfig(this.controlRegisters);
 
+    CyclesPerLine: number = 65;
+    LinesPerFrame: number = 312;
+    ScreenWidth: number = 233;
+    ScreenHeight: number = 284;
+
     /**
      * Returns default control register values for PAL
      * @returns 
@@ -23,6 +28,7 @@ export class Vic6560 {
     }
 
     constructor(canvas: HTMLCanvasElement) {
+        alert(canvas.width);
         this.canvas = canvas;
         this.context = this.canvas.getContext("2d");
 
@@ -91,6 +97,7 @@ export class Vic6560 {
      * Single cycle of Vic6560
      */
     Cycle() {
+
 
     }
 

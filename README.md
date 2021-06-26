@@ -163,8 +163,58 @@ There are 56 instructions and 13 addressing modes on the 6502. There are 151 'de
 
 
 
+## Vic6560/6561
+
+The Video Interface Chip is the integrated circuit chip responsible for generating graphics and sound on the Vic-20, also is also the chip that gave rise to the name of the computer itself. 2 versions were released:
+- MOS 6560: NTSC version (mainly used in North America)
+- MOS 6561: PAL version (used in most other countries)
+
+PAL and NTSC are encoding standards for analogue TV. Analogue TVs use analog signals to transmit video and sound. The image is displayed using a cathode ray tube (CRT). The CRT displays an image by scanning a beam of electrons across the screen in a pattern of horizontal lines known as a raster. At the end of each line, the beam returns to the start of the next line. At the end of the last line, the beam returns to the beginning of the first line at the top of the screen. You can read more about raster scanning here: https://en.wikipedia.org/wiki/Raster_scan.
+
+### Parameters
+
+| Chip                       | 6560-101     | 6561-101    |
+| -------------------------- | ------------ | ----------- |
+| System                     | NTSC-M       | PAL-B       |
+| Cycles Per Line            | 65           | 71          |
+| Lines Per Frame            | 261          | 312         |
+| Lines Per Frame Interlaced | 525          | n/a         |
+| Crystal                    | 14318181 Hz  | 4433618 Hz  |
+| Bus Clock                  | Crystal / 14 | Crystal / 4 |
+| Screen Width               | 210          | 233         |
+| Screen Height              | 233          | 284         |
+| Vertical Blank Lines       | 27           | 27          |
+| Horizontal Blank Cycles    | 15           | 15          |
 
 
+### Registers
+
+The 6560/6561 has 16 read/write registers: 9000 - 900F.
+
+These 16 registers are used to Configure the following:
+
+| Name                    | Purpose | Range (Size) | 6560-101 Default | 6561-101 Default |
+| ----------------------- | ------- | ------------ | ---------------- | ---------------- |
+| Interlace Mode (on/off) |         |              |                  |                  |
+| Screen Origin X         |         |              |                  |                  |
+| Screen Origin X         |         |              |                  |                  |
+| Number of Video Columns |         |              |                  |                  |
+| Number of Video Rows    |         |              |                  |                  |
+
+
+### Emulating Video Cycle
+
+The display is controlled by the timing of the crystal / master clock. We can calculate frame rates as follows:
+
+| Metric          | 6560-101     | 6561-101    |
+| --------------- | ------------ | ----------- |
+| Crystal         | 14318181 Hz  | 4433618 Hz  |
+| Bus Clock       | Crystal / 14 | Crystal / 4 |
+| Bus frequency   | 1022727 Hz   | 1108404 Hz  |
+| Cycles Per Line | 65           | 71          |
+| Lines Per Sec   | 15734        | 15611       |
+| Lines Per Frame | 261          | 312         |
+| Frames Per Sec  | 60           | 50          |
 
 ## MOS6502
 
