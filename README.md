@@ -193,34 +193,34 @@ The 6560/6561 has 16 read/write registers: 9000 - 900F.
 
 These 16 registers are used to Configure the following:
 
-| Name                      | Purpose | Range (Size) | 6560-101 Default | 6561-101 Default |
-| ------------------------- | ------- | ------------ | ---------------- | ---------------- |
-| Interlace Mode (on/off)   |         |              |                  |                  |
-| Screen Origin X           |         |              |                  |                  |
-| Screen Origin X           |         |              |                  |                  |
-| Number of Video Columns   |         |              |                  |                  |
-| Number of Video Rows      |         |              |                  |                  |
-| Character Size            |         |              |                  |                  |
-| Current Raster Line       |         |              |                  |                  |
-| Screen Memory Location    |         |              |                  |                  |
-| Character Memory Location |         |              |                  |                  |
-| Light Pen X               |         |              |                  |                  |
-| Light Pen Y               |         |              |                  |                  |
-| Paddle X                  |         |              |                  |                  |
-| Paddle Y                  |         |              |                  |                  |
-| Bass Switch               |         |              |                  |                  |
-| Bass Frequency            |         |              |                  |                  |
-| Alto Switch               |         |              |                  |                  |
-| Alto Frequency            |         |              |                  |                  |
-| Soprano Switch            |         |              |                  |                  |
-| Soprano Frequency         |         |              |                  |                  |
-| Noise Switch              |         |              |                  |                  |
-| Noise Frequency           |         |              |                  |                  |
-| Auxilliary Colour         |         |              |                  |                  |
-| Volume Control            |         |              |                  |                  |
-| Screen Colour             |         |              |                  |                  |
-| Reverse Mode              |         |              |                  |                  |
-| Border Colour             |         |              |                  |                  |
+| Name                      | Purpose                                                                                                    | Range (Size) | 6560-101 Default | 6561-101 Default |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------ | ---------------- | ---------------- |
+| Interlace Mode (on/off)   | In this mode, the video chip will draw 525 lines of 65 cycles per line instead of 261 non-interlaced lines | 0/1          |                  |                  |
+| Screen Origin X           | The screen X-origin  (4 pixels granularity)                                                                |              |                  |                  |
+| Screen Origin Y           | The screen Y-origin (2 scan lines granularity)                                                             |              |                  |                  |
+| Number of Video Columns   |                                                                                                            |              |                  |                  |
+| Number of Video Rows      |                                                                                                            |              |                  |                  |
+| Character Size            |                                                                                                            |              |                  |                  |
+| Current Raster Line       |                                                                                                            |              |                  |                  |
+| Screen Memory Location    |                                                                                                            |              |                  |                  |
+| Character Memory Location |                                                                                                            |              |                  |                  |
+| Light Pen X               |                                                                                                            |              |                  |                  |
+| Light Pen Y               |                                                                                                            |              |                  |                  |
+| Paddle X                  |                                                                                                            |              |                  |                  |
+| Paddle Y                  |                                                                                                            |              |                  |                  |
+| Bass Switch               |                                                                                                            |              |                  |                  |
+| Bass Frequency            |                                                                                                            |              |                  |                  |
+| Alto Switch               |                                                                                                            |              |                  |                  |
+| Alto Frequency            |                                                                                                            |              |                  |                  |
+| Soprano Switch            |                                                                                                            |              |                  |                  |
+| Soprano Frequency         |                                                                                                            |              |                  |                  |
+| Noise Switch              |                                                                                                            |              |                  |                  |
+| Noise Frequency           |                                                                                                            |              |                  |                  |
+| Auxilliary Colour         |                                                                                                            |              |                  |                  |
+| Volume Control            |                                                                                                            |              |                  |                  |
+| Screen Colour             |                                                                                                            |              |                  |                  |
+| Reverse Mode              |                                                                                                            |              |                  |                  |
+| Border Colour             |                                                                                                            |              |                  |                  |
 
 
 

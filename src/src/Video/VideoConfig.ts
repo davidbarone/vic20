@@ -138,6 +138,7 @@ export class VideoConfig {
     }
 
     get NumberOfVideoColumns(): number {
+        alert(`value of reg is ${this.ControlRegisters[ControlRegisterEnum.CR2_NO_OF_VIDEO_MATRIX_COLUMNS]} `);
         return Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR2_NO_OF_VIDEO_MATRIX_COLUMNS], 0, 6);
     }
 
@@ -205,6 +206,7 @@ export class VideoConfig {
         return Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRD_F_IN_4], 7, 7) == 1;
     }
 
+    /*
     Base: number = 0;
     ColBase: number = 0;
     CharRom: number = 0;
@@ -215,6 +217,7 @@ export class VideoConfig {
     MaxValue3: number = 0;
     Volume: number = 0;
     SoundStateOff: number = 0;
+    */
 
     /**
      * Used for multicolor mode:
