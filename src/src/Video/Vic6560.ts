@@ -96,13 +96,10 @@ export class Vic6560 {
             if (this.isRowBlanking() || this.isLineBlanking()) {
                 // do nothing
             } else if (this.isTextArea()) {
-                this._data32[this._dataPtr] = this.Colors[1];
-                this._dataPtr++;
+                this._data32[this._dataPtr++] = this.Colors[1];
             } else {
-                this._data32[this._dataPtr] = this.Colors[this.vicControlRegisters.BorderColour];
-                this._dataPtr++;
+                this._data32[this._dataPtr++] = this.Colors[this.vicControlRegisters.BorderColour];
             }
-
         }
 
         this._cycle++;
@@ -122,24 +119,22 @@ export class Vic6560 {
         }
 
         this._cycle = 0;
-        this._rowCycle = 0;
-        this._line = 0;
         this._dataPtr = 0;
     }
 
     isRowBlanking(): boolean {
-        return this._rowCycle > (this.ScreenWidth * 2);
+        return this._rowCycle >= ~~(this.ScreenWidth / 4);
     }
 
     isLineBlanking(): boolean {
-        return this._line > (this.ScreenHeight);
+        return this._line >= (this.ScreenHeight);
     }
 
     isTextArea(): boolean {
-        return (this._line >= (this.vicControlRegisters.ScreenOriginY * 2) &&
-            this._line < ((this.vicControlRegisters.ScreenOriginY * 2) + (this.vicControlRegisters.NumberOfVideoRows * 8))) &&
-            (this._rowCycle >= (this.vicControlRegisters.ScreenOriginX * 2) &&
-                this._rowCycle < ((this.vicControlRegisters.ScreenOriginX * 2) + (this.vicControlRegisters.NumberOfVideoColumns * 2)));
+        return (this._line > (this.vicControlRegisters.ScreenOriginY * 2) &&
+            this._line <= ((this.vicControlRegisters.ScreenOriginY * 2) + (this.vicControlRegisters.NumberOfVideoRows * 8))) &&
+            (this._rowCycle > (this.vicControlRegisters.ScreenOriginX) &&
+                this._rowCycle <= ((this.vicControlRegisters.ScreenOriginX) + (this.vicControlRegisters.NumberOfVideoColumns * 2)));
     }
 
     UpdateVolumes() {
