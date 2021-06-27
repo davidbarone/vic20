@@ -18,7 +18,10 @@ export class Vic20 {
      */
     init() {
         alert('vic20 init');
-        this.cycle();
+
+        for (let i = 0; i < (71 * 312) * 50; i++)
+            this.cycle();
+
 
     }
 
@@ -27,6 +30,5 @@ export class Vic20 {
      */
     cycle() {
         this.Vic6560.Cycle();
-
     }
 }
