@@ -92,13 +92,15 @@ export class Vic6560 {
         this._line = ~~(this._cycle / this.CyclesPerLine);  // double NOT fastest way to floor.
 
         // Each cycle writes 4 pixels
-        for (let i = 0; i < 4; i++) {
-            if (this.isRowBlanking() || this.isLineBlanking()) {
-                // do nothing
-            } else if (this.isTextArea()) {
-                this._data32[this._dataPtr++] = this.Colors[1];
-            } else {
-                this._data32[this._dataPtr++] = this.Colors[this.vicControlRegisters.BorderColour];
+        if (this.isRowBlanking() || this.isLineBlanking()) {
+            // do nothing
+        } else {
+            for (let i = 0; i < 4; i++) {
+                if (this.isTextArea()) {
+                    this._data32[this._dataPtr++] = this.Colors[1];
+                } else {
+                    this._data32[this._dataPtr++] = this.Colors[this.vicControlRegisters.BorderColour];
+                }
             }
         }
 
@@ -131,10 +133,10 @@ export class Vic6560 {
     }
 
     isTextArea(): boolean {
-        return (this._line > (this.vicControlRegisters.ScreenOriginY * 2) &&
-            this._line <= ((this.vicControlRegisters.ScreenOriginY * 2) + (this.vicControlRegisters.NumberOfVideoRows * 8))) &&
-            (this._rowCycle > (this.vicControlRegisters.ScreenOriginX) &&
-                this._rowCycle <= ((this.vicControlRegisters.ScreenOriginX) + (this.vicControlRegisters.NumberOfVideoColumns * 2)));
+        return (this._line >= (this.vicControlRegisters.ScreenOriginY * 2) &&
+            this._line < ((this.vicControlRegisters.ScreenOriginY * 2) + (this.vicControlRegisters.NumberOfVideoRows * 8))) &&
+            (this._rowCycle >= (this.vicControlRegisters.ScreenOriginX) &&
+                this._rowCycle < ((this.vicControlRegisters.ScreenOriginX) + (this.vicControlRegisters.NumberOfVideoColumns * 2)));
     }
 
     UpdateVolumes() {
