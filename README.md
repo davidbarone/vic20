@@ -198,8 +198,8 @@ These 16 registers are used to Configure the following:
 | Interlace Mode (on/off)   | In this mode, the video chip will draw 525 lines of 65 cycles per line instead of 261 non-interlaced lines | 0/1          |                  |                  |
 | Screen Origin X           | The screen X-origin  (4 pixels granularity)                                                                |              |                  |                  |
 | Screen Origin Y           | The screen Y-origin (2 scan lines granularity)                                                             |              |                  |                  |
-| Number of Video Columns   |                                                                                                            |              |                  |                  |
-| Number of Video Rows      |                                                                                                            |              |                  |                  |
+| Number of Video Columns   | The number of columns of text                                                                              |              |                  |                  |
+| Number of Video Rows      | The number of rows of text                                                                                 |              |                  |                  |
 | Character Size            |                                                                                                            |              |                  |                  |
 | Current Raster Line       |                                                                                                            |              |                  |                  |
 | Screen Memory Location    |                                                                                                            |              |                  |                  |
@@ -237,6 +237,10 @@ The display is controlled by the timing of the crystal / master clock. We can ca
 | Lines Per Sec   | 15734        | 15611       |
 | Lines Per Frame | 261          | 312         |
 | Frames Per Sec  | 60           | 50          |
+
+### Video Dimensions (PAL Example Shown)
+
+![Video Dimensions](https://github.com/davidbarone/vic20/blob/main/images/VideoDimensions.png?raw=true)
 
 ## MOS6502
 
