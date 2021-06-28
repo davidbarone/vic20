@@ -4,8 +4,10 @@ import { VicControlRegisters } from "./VicControlRegisters"
 export class Vic6560 {
 
 
-    canvas: HTMLCanvasElement;
+    canvas: HTMLCanvasElement;          // the displayed canvas
+    internalCanvas: HTMLCanvasElement;  // fixed to 6560 dimensions
     context: CanvasRenderingContext2D | null;
+    internalContext: CanvasRenderingContext2D | null;
     vicControlRegisters: VicControlRegisters = new VicControlRegisters();
 
     CyclesPerLine: number = 71;
@@ -20,7 +22,7 @@ export class Vic6560 {
     _canvasWidth: number = 0;
     _canvasHeight: number = 0;
     _data32: Uint32Array = new Uint32Array([]);
-    _dataPtr: number = 0;
+    _rowPixel: number = 0;
     _imageData: any;
     _buf8: Uint8ClampedArray = new Uint8ClampedArray();
 
@@ -66,22 +68,28 @@ export class Vic6560 {
     constructor(canvas: HTMLCanvasElement) {
 
         this.canvas = canvas;
+        this.internalCanvas = document.createElement('canvas');;
+        this.internalCanvas.width = this.ScreenWidth;
+        this.internalCanvas.height = this.ScreenHeight;
+
         this.context = this.canvas.getContext("2d");
+        this.internalContext = this.internalCanvas.getContext("2d");
+
+        // physical size of canvas
         this._canvasWidth = this.canvas.width;
         this._canvasHeight = this.canvas.height;
-        alert(this._canvasHeight);
-        alert(this._canvasWidth);
 
-        if (this.context != null) {
-            this._imageData = this.context.getImageData(0, 0, this._canvasWidth, this._canvasHeight);
+        // Create logical scale to canvas, so all coordinates based on 6560 screen width+height
+        this.context?.scale(this._canvasWidth / this.ScreenWidth, this._canvasHeight / this.ScreenHeight);
+
+        if (this.internalContext != null) {
+            this._imageData = this.internalContext.getImageData(0, 0, this.ScreenWidth, this.ScreenHeight);
             let data = this._imageData.data;
             var buf = new ArrayBuffer(this._imageData.data.length);
             this._buf8 = new Uint8ClampedArray(buf);
             this._data32 = new Uint32Array(buf);
         }
     }
-
-
 
     /**
      * Single cycle of Vic6560
@@ -97,9 +105,9 @@ export class Vic6560 {
         } else {
             for (let i = 0; i < 4; i++) {
                 if (this.isTextArea()) {
-                    this._data32[this._dataPtr++] = this.Colors[1];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = this.Colors[1];
                 } else {
-                    this._data32[this._dataPtr++] = this.Colors[this.vicControlRegisters.BorderColour];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = this.Colors[this.vicControlRegisters.BorderColour];
                 }
             }
         }
@@ -107,6 +115,7 @@ export class Vic6560 {
         this._cycle++;
         if (this._cycle % this.CyclesPerLine == 0) {
             this._line++;
+            this._rowPixel = 0;
         }
         if (this._cycle == (this.CyclesPerLine * this.LinesPerFrame)) {
             this.drawFrame();
@@ -115,21 +124,25 @@ export class Vic6560 {
     }
 
     drawFrame(): void {
-        if (this.context) {
+        if (this.internalContext) {
             this._imageData.data.set(this._buf8);
-            this.context.putImageData(this._imageData, 0, 0);
+            this.internalContext.putImageData(this._imageData, 0, 0);
+
+            if (this.context) {
+                this.context.drawImage(this.internalCanvas, 0, 0);
+            }
         }
 
         this._cycle = 0;
-        this._dataPtr = 0;
+        this._rowPixel = 0;
     }
 
     isRowBlanking(): boolean {
-        return this._rowCycle >= ~~(this.ScreenWidth / 4);
+        return this._rowCycle > ~~(this.ScreenWidth / 4);
     }
 
     isLineBlanking(): boolean {
-        return this._line >= (this.ScreenHeight);
+        return this._line > (this.ScreenHeight);
     }
 
     isTextArea(): boolean {
