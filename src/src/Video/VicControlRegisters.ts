@@ -105,22 +105,28 @@ export class VicControlRegisters {
     ReverseMode: boolean = false;
     BorderColour: number = 0;
 
+    ColorBase: number = 0;
+
     /**
      * Returns default control register values for PAL
      * @returns 
      */
-    DefaultRegisterValuesPal() {
-        return [
-            12, 38, 150, 174, 73, 240, 0, 0, 255, 255, 0, 0, 0, 0, 0, 27,
-        ];
+    DefaultRegisterValuesPal(isPal: boolean) {
+        if (isPal)
+            return [
+                12, 38, 150, 174, 73, 240, 0, 0, 255, 255, 0, 0, 0, 0, 0, 27,
+            ]; else
+            return [
+                5, 25, 150, 174, 27, 240, 87, 234, 0, 0, 0, 0, 0, 0, 0, 27,
+            ]
     }
 
-    constructor() {
+    constructor(isPal: boolean = false) {
         // Initialise control registers
         for (var i = 0; i < 16; i++) {
             this.Write(
                 i,
-                this.DefaultRegisterValuesPal()[i]
+                this.DefaultRegisterValuesPal(isPal)[i]
             );
         }
         console.log(this);
@@ -147,9 +153,14 @@ export class VicControlRegisters {
                 this.NumberOfVideoColumns = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR2_NO_OF_VIDEO_MATRIX_COLUMNS], 0, 6);
                 this.ScreenMemoryLocation = Utils.ShiftLeft(
                     Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR5_BASE_ADDRESS_CONTROL], 4, 7),
-                    6) | Utils.ShiftLeft(
+                    10) | Utils.ShiftLeft(
                         Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR2_NO_OF_VIDEO_MATRIX_COLUMNS], 7, 7),
-                        8);
+                        9);
+                this.ScreenMemoryLocation = this.MapMemory(this.ScreenMemoryLocation);
+
+                this.ColorBase = Utils.ShiftLeft(Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR2_NO_OF_VIDEO_MATRIX_COLUMNS], 7, 7), 6);
+                this.ColorBase = 0x1400 + ((this.ColorBase & 128) << 2);
+                this.ColorBase = this.MapMemory(this.ColorBase);
                 break;
             case ControlRegisterEnum.CR3_NO_OF_VIDEO_MATRIX_ROWS:
                 this.NumberOfVideoRows = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR3_NO_OF_VIDEO_MATRIX_ROWS], 1, 6);
@@ -166,13 +177,14 @@ export class VicControlRegisters {
             case ControlRegisterEnum.CR5_BASE_ADDRESS_CONTROL:
                 this.ScreenMemoryLocation = Utils.ShiftLeft(
                     Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR5_BASE_ADDRESS_CONTROL], 4, 7),
-                    6) | Utils.ShiftLeft(
+                    10) | Utils.ShiftLeft(
                         Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR2_NO_OF_VIDEO_MATRIX_COLUMNS], 7, 7),
-                        8);
-                this.CharacterMemoryLocation = Utils.ShiftLeft(
+                        9);
+                this.ScreenMemoryLocation = this.MapMemory(this.ScreenMemoryLocation);
+                this.CharacterMemoryLocation = this.MapMemory(Utils.ShiftLeft(
                     Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR5_BASE_ADDRESS_CONTROL], 0, 3),
                     10
-                );
+                ));
                 break;
             case ControlRegisterEnum.CR6_LIGHT_PEN_HORIZONTAL:
                 this.LightPenX = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR6_LIGHT_PEN_HORIZONTAL], 0, 7);
@@ -222,4 +234,30 @@ export class VicControlRegisters {
      * 11 - auxilliary color (CRE)
      */
     MultiColor: Array<number> = new Array(4);
+
+    /**
+     * Vic6560 has only 14 address lines. Vic6560 uses
+     * different addresses to the rest of the computer.
+     * Examples below:
+     * 
+     * Vic chip address     Ordinary Address
+     * ----------------     ----------------
+     *         0                  32768  Unreversed Character ROM
+     *      1024                  33792  Reversed Character ROM
+     *      2048                  34816  Unreversed upper/lower case ROM
+     *      3072                  35840  Reversed upper/lower case ROM
+     *      4096                  36864  VIC and VIA chips
+     *      5120                  37888  Colour memory
+     *      6144                  38912  Reserved for expansion
+     *      7168                  39936  Reserved for expansion
+     * 
+     *      8192                      0  System memory
+     *      9216                   1024  Reserved for expansion
+     *     12288                   4096  Program
+     *     15360                   7168  Screen 
+     * @param vic6560Offset The address as seen by the Vic6560 (14-bit address)
+     */
+    MapMemory(vic6560Offset: number): number {
+        return (vic6560Offset & 0x1fff) | (~((vic6560Offset & 0x2000) << 2) & 0x8000);
+    }
 }

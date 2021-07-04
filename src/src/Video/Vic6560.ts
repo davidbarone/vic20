@@ -10,10 +10,12 @@ export class Vic6560 {
     internalContext: CanvasRenderingContext2D | null;
     vicControlRegisters: VicControlRegisters = new VicControlRegisters();
 
-    CyclesPerLine: number = 71;
-    LinesPerFrame: number = 312;
-    ScreenWidth: number = 233;
-    ScreenHeight: number = 284;
+    CyclesPerLine: number = 0;
+    HorizontalBlankCycles: number = 0;
+    LinesPerFrame: number = 0;
+    VerticalBlankRows: number = 0;
+    ScreenWidth: number = 0;
+    ScreenHeight: number = 0;
 
     _cycle: number = 0;
     _rowCycle: number = 0;
@@ -65,7 +67,27 @@ export class Vic6560 {
         0xffe0ffff, // light yellow
     ];
 
-    constructor(canvas: HTMLCanvasElement) {
+    constructor(isPal: boolean, canvas: HTMLCanvasElement) {
+
+        if (isPal) {
+            this.CyclesPerLine = 71;
+            this.HorizontalBlankCycles = 15
+            this.LinesPerFrame = 312;
+            this.VerticalBlankRows = 27
+            //this.ScreenWidth = 233;
+            //this.ScreenHeight = 284;
+        } else {
+            this.CyclesPerLine = 65;
+            this.HorizontalBlankCycles = 15
+            this.LinesPerFrame = 261;
+            this.VerticalBlankRows = 7;
+            //this.ScreenWidth = 233;
+            //this.ScreenHeight = 284;
+        }
+
+        // Reset screenwidth based on raster cycles / lines
+        this.ScreenWidth = (this.CyclesPerLine - this.HorizontalBlankCycles) * 4;   // Each horizontal cycle = 4 pixels
+        this.ScreenHeight = (this.LinesPerFrame - this.VerticalBlankRows);
 
         this.canvas = canvas;
         this.internalCanvas = document.createElement('canvas');;
@@ -138,11 +160,11 @@ export class Vic6560 {
     }
 
     isRowBlanking(): boolean {
-        return this._rowCycle > ~~(this.ScreenWidth / 4);
+        return this._rowCycle > this.CyclesPerLine - this.HorizontalBlankCycles;
     }
 
     isLineBlanking(): boolean {
-        return this._line > (this.ScreenHeight);
+        return this._line > this.LinesPerFrame - this.VerticalBlankRows;
     }
 
     isTextArea(): boolean {

@@ -7,5 +7,3 @@ declare global {
 }
 
 window.vic20 = Vic20 || {};
-
-alert(~~(71 / 72));

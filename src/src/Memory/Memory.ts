@@ -87,7 +87,7 @@ export default class Memory {
     private Size: number = 65536;
     private ReadFunc: Array<Function>;
     private WriteFunc: Array<Function>;
-    
+
     constructor() {
         this.Mem = new Uint8Array(this.Size);
         this.ReadFunc = new Array(this.Size);
@@ -95,13 +95,26 @@ export default class Memory {
         this.Reset();
     }
 
+
+    /**
+     * Loads data (e.g. ROM) into memory at given location/offset.
+     * @param dataBase64 
+     * @param offset 
+     */
+    loadData(data: Uint8Array, offset: number): void {
+        let size = data.length;
+        for (let i = 0; i < size; i++) {
+            this.WriteMem(offset + i, data[i]);
+        }
+    }
+
     // I/O functions for different parts of memory
     private ReadMem(mem: Uint8Array, offset: number): number {
-        return mem[offset];
+        return this.Mem[offset];
     }
-        
+
     private ReadNull(mem: Uint8Array, offset: number): number {
-        return mem[offset];
+        return this.Mem[offset];
     }
 
     private ReadVia1(mem: Uint8Array, offset: number): number {
@@ -112,12 +125,12 @@ export default class Memory {
         return 0;
     }
 
-    private WriteMem(mem: Uint8Array, offset: number, value: number): void {
-        mem[offset] = value;
+    private WriteMem(offset: number, value: number): void {
+        this.Mem[offset] = value;
     }
-        
+
     private WriteNull(mem: Uint8Array, offset: number, value: number): void {
-        
+
     }
 
 

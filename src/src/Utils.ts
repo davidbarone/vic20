@@ -97,6 +97,34 @@ class Utils {
         return new Uint8Array(bytes);
     }
 
+    /**
+     * Returns a base64 encoding of a UInt8Array, where data is plain ASCII (not multibyte unicode/UTF).
+     * @param data 
+     * @returns 
+     */
+    public static UInt8ArrayToBase64(data: Uint8Array): string {
+
+        let raw = Array.from(data);
+        //var decoder = new TextDecoder("windows-1252");
+        //var b64encoded = btoa(decoder.decode(raw));
+        var b64encoded = btoa(String.fromCharCode.apply(null, raw));
+        return b64encoded
+
+    }
+
+    /**
+     * Returns a UInt8Array from a base64 encoding, where the resulting data is plain ASCII (not multibyte unicode/UTF).
+     * @param str 
+     * @returns 
+     */
+    public static UInt8ArrayFromBase64(base64: string): Uint8Array {
+
+        var data = new Uint8Array(atob(base64).split("").map(function (c) {
+            return c.charCodeAt(0);
+        }));
+        return data;
+
+    }
 }
 
 // Typescript does not support static constructors. This is workaround.
