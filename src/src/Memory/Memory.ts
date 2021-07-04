@@ -92,9 +92,12 @@ export default class Memory {
         this.Mem = new Uint8Array(this.Size);
         this.ReadFunc = new Array(this.Size);
         this.WriteFunc = new Array(this.Size);
+        for (let i = 0; i < this.Size; i++) {
+            this.ReadFunc[i] = this.ReadMem;
+            this.WriteFunc[i] = this.WriteMem;
+        }
         this.Reset();
     }
-
 
     /**
      * Loads data (e.g. ROM) into memory at given location/offset.
@@ -104,32 +107,32 @@ export default class Memory {
     loadData(data: Uint8Array, offset: number): void {
         let size = data.length;
         for (let i = 0; i < size; i++) {
-            this.WriteMem(offset + i, data[i]);
+            this.WriteMem(this.Mem, offset + i, data[i]);
         }
     }
 
     // I/O functions for different parts of memory
     private ReadMem(mem: Uint8Array, offset: number): number {
+        return mem[offset];
+    }
+
+    private ReadNull(offset: number): number {
         return this.Mem[offset];
     }
 
-    private ReadNull(mem: Uint8Array, offset: number): number {
-        return this.Mem[offset];
-    }
-
-    private ReadVia1(mem: Uint8Array, offset: number): number {
+    private ReadVia1(offset: number): number {
         return 0;
     }
 
-    private ReadVia2(mem: Uint8Array, offset: number): number {
+    private ReadVia2(offset: number): number {
         return 0;
     }
 
-    private WriteMem(offset: number, value: number): void {
-        this.Mem[offset] = value;
+    private WriteMem(mem: Uint8Array, offset: number, value: number): void {
+        mem[offset] = value;
     }
 
-    private WriteNull(mem: Uint8Array, offset: number, value: number): void {
+    private WriteNull(offset: number, value: number): void {
 
     }
 
@@ -142,6 +145,8 @@ export default class Memory {
         }
     }
 
+    // Mapped Funcs
+
     // Reads a byte of memory
     ReadByte(offset: number): number {
         return this.ReadFunc[offset](this.Mem, offset);
@@ -149,8 +154,8 @@ export default class Memory {
 
     // Reads a word of memory (little-endian)
     ReadWord(offset: number): number {
-        var lo = this.ReadFunc[offset](offset);
-        var hi = this.ReadFunc[offset + 1](offset + 1);
+        var lo = this.ReadFunc[offset](this.Mem, offset);
+        var hi = this.ReadFunc[offset + 1](this.Mem, offset + 1);
         return lo | (hi << 8);
     }
 

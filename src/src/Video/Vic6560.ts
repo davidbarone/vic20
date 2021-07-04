@@ -1,9 +1,10 @@
+import Memory from "../Memory/Memory";
 import { ControlRegisterEnum } from "./ControlRegisterEnum"
 import { VicControlRegisters } from "./VicControlRegisters"
 
 export class Vic6560 {
 
-
+    Memory: Memory;
     canvas: HTMLCanvasElement;          // the displayed canvas
     internalCanvas: HTMLCanvasElement;  // fixed to 6560 dimensions
     context: CanvasRenderingContext2D | null;
@@ -67,7 +68,7 @@ export class Vic6560 {
         0xffe0ffff, // light yellow
     ];
 
-    constructor(isPal: boolean, canvas: HTMLCanvasElement) {
+    constructor(isPal: boolean, memory: Memory, canvas: HTMLCanvasElement) {
 
         if (isPal) {
             this.CyclesPerLine = 71;
@@ -85,7 +86,10 @@ export class Vic6560 {
             //this.ScreenHeight = 284;
         }
 
+        this.Memory = memory;
+
         // Reset screenwidth based on raster cycles / lines
+
         this.ScreenWidth = (this.CyclesPerLine - this.HorizontalBlankCycles) * 4;   // Each horizontal cycle = 4 pixels
         this.ScreenHeight = (this.LinesPerFrame - this.VerticalBlankRows);
 
@@ -125,12 +129,36 @@ export class Vic6560 {
         if (this.isRowBlanking() || this.isLineBlanking()) {
             // do nothing
         } else {
-            for (let i = 0; i < 4; i++) {
-                if (this.isTextArea()) {
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = this.Colors[1];
+            if (this.isTextArea()) {
+                let col: number = this.getColumn();
+                let row: number = this.getRow();
+                let evenCycle: boolean = this._rowCycle % 2 == 0;
+
+                let charIndex = (row * this.vicControlRegisters.NumberOfVideoColumns) + col;
+                charIndex >>= 3;
+                charIndex += this.vicControlRegisters.CharacterMemoryLocation;
+
+                // character cell block is 8 bytes long (8x8 matrix). Get the correct nibble
+                charIndex += ((this._line % 8) >> 3);
+                let charData: number = this.Memory.ReadByte(charIndex); // reads 8 bits for the current raster line
+
+                if (evenCycle) {
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x80) ? this.Colors[1] : this.Colors[0];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x40) ? this.Colors[1] : this.Colors[0];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x20) ? this.Colors[1] : this.Colors[0];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x10) ? this.Colors[1] : this.Colors[0];
                 } else {
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = this.Colors[this.vicControlRegisters.BorderColour];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x08) ? this.Colors[1] : this.Colors[0];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x04) ? this.Colors[1] : this.Colors[0];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x02) ? this.Colors[1] : this.Colors[0];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x01) ? this.Colors[1] : this.Colors[0];
                 }
+            } else {
+                // draw border;
+                this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = this.Colors[this.vicControlRegisters.BorderColour];
+                this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = this.Colors[this.vicControlRegisters.BorderColour];
+                this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = this.Colors[this.vicControlRegisters.BorderColour];
+                this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = this.Colors[this.vicControlRegisters.BorderColour];
             }
         }
 
@@ -167,11 +195,31 @@ export class Vic6560 {
         return this._line > this.LinesPerFrame - this.VerticalBlankRows;
     }
 
+    /**
+     * Gets the column within normal display (0-21)
+     * @returns 
+     */
+    getColumn(): number {
+        return ~~((this._rowCycle - this.vicControlRegisters.ScreenOriginX) / 2);
+    }
+
+    /**
+     * Gets the row within normal display (0-22)
+     */
+    getRow(): number {
+        return ~~((this._line - (this.vicControlRegisters.ScreenOriginY * 2)) / 8);
+    }
+
     isTextArea(): boolean {
+        let col = this.getColumn();
+        let row = this.getRow();
+        return col >= 0 && col < this.vicControlRegisters.NumberOfVideoColumns && row >= 0 && row < this.vicControlRegisters.NumberOfVideoRows;
+        /*
         return (this._line >= (this.vicControlRegisters.ScreenOriginY * 2) &&
             this._line < ((this.vicControlRegisters.ScreenOriginY * 2) + (this.vicControlRegisters.NumberOfVideoRows * 8))) &&
             (this._rowCycle >= (this.vicControlRegisters.ScreenOriginX) &&
                 this._rowCycle < ((this.vicControlRegisters.ScreenOriginX) + (this.vicControlRegisters.NumberOfVideoColumns * 2)));
+    */
     }
 
     UpdateVolumes() {
