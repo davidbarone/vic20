@@ -135,12 +135,14 @@ export class Vic6560 {
                 let evenCycle: boolean = this._rowCycle % 2 == 0;
 
                 let charIndex = (row * this.vicControlRegisters.NumberOfVideoColumns) + col;
-                charIndex >>= 3;
-                charIndex += this.vicControlRegisters.CharacterMemoryLocation;
+                let characterPointer = this.Memory.ReadByte(this.vicControlRegisters.ScreenMemoryLocation + charIndex) + 55;
+
+                characterPointer >>= 3;
+                characterPointer += this.vicControlRegisters.CharacterMemoryLocation;
 
                 // character cell block is 8 bytes long (8x8 matrix). Get the correct nibble
-                charIndex += ((this._line % 8) >> 3);
-                let charData: number = this.Memory.ReadByte(charIndex); // reads 8 bits for the current raster line
+                characterPointer += ((this._line % 8) >> 3);
+                let charData: number = this.Memory.ReadByte(characterPointer); // reads 8 bits for the current raster line
 
                 if (evenCycle) {
                     this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x80) ? this.Colors[1] : this.Colors[0];

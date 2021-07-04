@@ -14,7 +14,7 @@ export class Vic20 {
     constructor(canvas: HTMLCanvasElement) {
         this.Memory = new Memory();
         this.Cpu = new cpu6502(this.Memory);
-        this.Vic6560 = new Vic6560(false, this.Memory, canvas);
+        this.Vic6560 = new Vic6560(true, this.Memory, canvas);
     }
     /**
      * Initialises the Vic20 computer
