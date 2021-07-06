@@ -1,6 +1,7 @@
 import Memory from "../Memory/Memory";
 import { ControlRegisterEnum } from "./ControlRegisterEnum"
 import { VicControlRegisters } from "./VicControlRegisters"
+import Utils from "../Utils"
 
 export class Vic6560 {
 
@@ -132,28 +133,35 @@ export class Vic6560 {
             if (this.isTextArea()) {
                 let col: number = this.getColumn();
                 let row: number = this.getRow();
-                let evenCycle: boolean = this._rowCycle % 2 == 0;
+                let evenCycle: boolean = (this._rowCycle - this.vicControlRegisters.ScreenOriginX) % 2 == 0;
 
                 let charIndex = (row * this.vicControlRegisters.NumberOfVideoColumns) + col;
-                let characterPointer = this.Memory.ReadByte(this.vicControlRegisters.ScreenMemoryLocation + charIndex) + 55;
+                let characterPointer = this.Memory.ReadByte(this.vicControlRegisters.ScreenMemoryLocation + charIndex);
 
-                characterPointer >>= 3;
+                let colorPointer: number = characterPointer >> 1;
+                characterPointer <<= 3;
                 characterPointer += this.vicControlRegisters.CharacterMemoryLocation;
+                colorPointer += this.vicControlRegisters.ColorBase;
+
+                // color pointer points to a nibble MSB denotes hires/color
 
                 // character cell block is 8 bytes long (8x8 matrix). Get the correct nibble
-                characterPointer += ((this._line % 8) >> 3);
+                characterPointer += (((this._line - (this.vicControlRegisters.ScreenOriginY * 2)) % 8));
                 let charData: number = this.Memory.ReadByte(characterPointer); // reads 8 bits for the current raster line
+                let colorData: number = this.Memory.ReadByte(colorPointer);
+                colorData = evenCycle ? Utils.ExtractBits(colorData, 4, 7) : Utils.ExtractBits(colorData, 0, 3);
+                let forecolor = Utils.ExtractBits(colorData, 0, 2);
 
                 if (evenCycle) {
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x80) ? this.Colors[1] : this.Colors[0];
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x40) ? this.Colors[1] : this.Colors[0];
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x20) ? this.Colors[1] : this.Colors[0];
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x10) ? this.Colors[1] : this.Colors[0];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x80) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x40) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x20) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x10) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
                 } else {
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x08) ? this.Colors[1] : this.Colors[0];
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x04) ? this.Colors[1] : this.Colors[0];
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x02) ? this.Colors[1] : this.Colors[0];
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x01) ? this.Colors[1] : this.Colors[0];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x08) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x04) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x02) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
+                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x01) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
                 }
             } else {
                 // draw border;
@@ -171,6 +179,7 @@ export class Vic6560 {
         }
         if (this._cycle == (this.CyclesPerLine * this.LinesPerFrame)) {
             this.drawFrame();
+            throw "werew";
         }
 
     }
@@ -198,18 +207,18 @@ export class Vic6560 {
     }
 
     /**
-     * Gets the column within normal display (0-21)
+     * Gets the column within normal display (0-21). Positive decimals round down. Negative decimals round up.
      * @returns 
      */
     getColumn(): number {
-        return ~~((this._rowCycle - this.vicControlRegisters.ScreenOriginX) / 2);
+        return ~~((100 + this._rowCycle - this.vicControlRegisters.ScreenOriginX) / 2) - 50;
     }
 
     /**
-     * Gets the row within normal display (0-22)
+     * Gets the row within normal display (0-22). Positive decimals round down. Negative decimals round up.
      */
     getRow(): number {
-        return ~~((this._line - (this.vicControlRegisters.ScreenOriginY * 2)) / 8);
+        return ~~((800 + this._line - (this.vicControlRegisters.ScreenOriginY * 2)) / 8) - 100;
     }
 
     isTextArea(): boolean {
