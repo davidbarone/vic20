@@ -35,13 +35,15 @@ export class Vic20 {
 
         let charROM = Utils.UInt8ArrayFromBase64(Data.character)
         this.Memory.loadData(charROM, 0x8000);
+        console.log("Loaded char ROM at 0x8000");
 
         let basicROM = Utils.UInt8ArrayFromBase64(Data.basic)
-        this.Memory.loadData(charROM, 0xC000);
+        this.Memory.loadData(basicROM, 0xC000);
+        console.log("Loaded BASIC ROM at 0xC000");
 
         let kernalROM = Utils.UInt8ArrayFromBase64(Data.kernal)
-        this.Memory.loadData(charROM, 0xE000);
-
+        this.Memory.loadData(kernalROM, 0xE000);
+        console.log("Loaded kernal ROM at 0xE000");
     }
 
     /**

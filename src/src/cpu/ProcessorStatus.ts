@@ -20,16 +20,40 @@ export default class ProcessorStatus {
         this.Flags = flags;
     }
 
+    /**
+     * Returns status of processor flag
+     */
     IsSet(flag: ProcessorStatusFlag): boolean {
         return (this.Flags & flag) != 0 ? true : false;
     }
 
+    /**
+     * Sets a processor flag to on
+     * @param flag 
+     */
     Set(flag: ProcessorStatusFlag): void {
         this.Flags &= flag;
     }
 
+    /**
+     * Clears a processor flag
+     * @param flag 
+     */
     Clear(flag: ProcessorStatusFlag): void {
         this.Flags &= ~flag;
+    }
+
+    /**
+     * Sets the value of a processor flag (on/off) based on the truthy of a value
+     * @param flag 
+     * @param value 
+     */
+    SetValue(flag: ProcessorStatusFlag, value: boolean) {
+        if (value) {
+            this.Set(flag);
+        } else {
+            this.Clear(flag);
+        }
     }
 
     SetZero(value: number): void {
@@ -45,7 +69,7 @@ export default class ProcessorStatus {
     SetCarry(value: number): number {
         this.Clear(ProcessorStatusFlag.Carry);
         if ((value >> 8) > 0) {
-          this.Set(ProcessorStatusFlag.Carry);
+            this.Set(ProcessorStatusFlag.Carry);
         }
         return value & 0xFF;
     }
