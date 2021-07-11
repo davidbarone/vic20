@@ -121,7 +121,7 @@ export class VicControlRegisters {
             ]
     }
 
-    constructor(isPal: boolean = false) {
+    constructor(isPal: boolean = true) {
         // Initialise control registers
         for (var i = 0; i < 16; i++) {
             this.Write(

@@ -14,6 +14,13 @@ export class Vic6560 {
 
     CyclesPerLine: number = 0;
     HorizontalBlankCycles: number = 0;
+
+    /**
+     * BlankLeftCycles is a 'fudge factor'. Assumption that the left offset includes blank cycles
+     * in order for 64 displayed cycles to occur per line for PAL. Have not found doco to support
+     * this yet. Based on https://github.com/matsondawson/vic20dart.
+     */
+    BlankLeftCycles: number = 0;
     LinesPerFrame: number = 0;
     VerticalBlankRows: number = 0;
     ScreenWidth: number = 0;
@@ -22,6 +29,7 @@ export class Vic6560 {
     _cycle: number = 0;
     _rowCycle: number = 0;
     _line: number = 0;
+    _rasterLine: number = 0;
 
     _canvasWidth: number = 0;
     _canvasHeight: number = 0;
@@ -74,13 +82,15 @@ export class Vic6560 {
         if (isPal) {
             this.CyclesPerLine = 71;
             this.HorizontalBlankCycles = 15
+            this.BlankLeftCycles = 8;
             this.LinesPerFrame = 312;
-            this.VerticalBlankRows = 27
+            this.VerticalBlankRows = 27;
             //this.ScreenWidth = 233;
             //this.ScreenHeight = 284;
         } else {
             this.CyclesPerLine = 65;
-            this.HorizontalBlankCycles = 15
+            this.HorizontalBlankCycles = 15;
+            this.BlankLeftCycles = 2;
             this.LinesPerFrame = 261;
             this.VerticalBlankRows = 7;
             //this.ScreenWidth = 233;
@@ -125,6 +135,7 @@ export class Vic6560 {
 
         this._rowCycle = this._cycle % this.CyclesPerLine;
         this._line = ~~(this._cycle / this.CyclesPerLine);  // double NOT fastest way to floor.
+        this._rasterLine = this._line - this.VerticalBlankRows
 
         // Each cycle writes 4 pixels
         if (this.isRowBlanking() || this.isLineBlanking()) {
@@ -146,29 +157,29 @@ export class Vic6560 {
                 // color pointer points to a nibble MSB denotes hires/color
 
                 // character cell block is 8 bytes long (8x8 matrix). Get the correct nibble
-                characterPointer += (((this._line - (this.vicControlRegisters.ScreenOriginY * 2)) % 8));
+                characterPointer += (((this._rasterLine - ((this.vicControlRegisters.ScreenOriginY * 2) - this.VerticalBlankRows)) % 8));
                 let charData: number = this.Memory.ReadByte(characterPointer); // reads 8 bits for the current raster line
                 let colorData: number = this.Memory.ReadByte(colorPointer);
                 colorData = evenCycle ? Utils.ExtractBits(colorData, 4, 7) : Utils.ExtractBits(colorData, 0, 3);
                 let forecolor = Utils.ExtractBits(colorData, 0, 2);
 
                 if (evenCycle) {
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x80) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x40) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x20) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x10) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
+                    this._data32[(this._rasterLine * this.ScreenWidth) + this._rowPixel++] = (charData & 0x80) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
+                    this._data32[(this._rasterLine * this.ScreenWidth) + this._rowPixel++] = (charData & 0x40) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
+                    this._data32[(this._rasterLine * this.ScreenWidth) + this._rowPixel++] = (charData & 0x20) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
+                    this._data32[(this._rasterLine * this.ScreenWidth) + this._rowPixel++] = (charData & 0x10) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
                 } else {
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x08) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x04) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x02) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
-                    this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = (charData & 0x01) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
+                    this._data32[(this._rasterLine * this.ScreenWidth) + this._rowPixel++] = (charData & 0x08) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
+                    this._data32[(this._rasterLine * this.ScreenWidth) + this._rowPixel++] = (charData & 0x04) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
+                    this._data32[(this._rasterLine * this.ScreenWidth) + this._rowPixel++] = (charData & 0x02) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
+                    this._data32[(this._rasterLine * this.ScreenWidth) + this._rowPixel++] = (charData & 0x01) ? this.Colors[forecolor] : this.Colors[this.vicControlRegisters.ScreenColour];
                 }
             } else {
                 // draw border;
-                this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = this.Colors[this.vicControlRegisters.BorderColour];
-                this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = this.Colors[this.vicControlRegisters.BorderColour];
-                this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = this.Colors[this.vicControlRegisters.BorderColour];
-                this._data32[(this._line * this.ScreenWidth) + this._rowPixel++] = this.Colors[this.vicControlRegisters.BorderColour];
+                this._data32[(this._rasterLine * this.ScreenWidth) + this._rowPixel++] = this.Colors[this.vicControlRegisters.BorderColour];
+                this._data32[(this._rasterLine * this.ScreenWidth) + this._rowPixel++] = this.Colors[this.vicControlRegisters.BorderColour];
+                this._data32[(this._rasterLine * this.ScreenWidth) + this._rowPixel++] = this.Colors[this.vicControlRegisters.BorderColour];
+                this._data32[(this._rasterLine * this.ScreenWidth) + this._rowPixel++] = this.Colors[this.vicControlRegisters.BorderColour];
             }
         }
 
@@ -199,26 +210,33 @@ export class Vic6560 {
     }
 
     isRowBlanking(): boolean {
-        return this._rowCycle > this.CyclesPerLine - this.HorizontalBlankCycles;
+        return !(this._cycle > this.BlankLeftCycles && this._rowCycle < this.CyclesPerLine - this.HorizontalBlankCycles);
     }
 
     isLineBlanking(): boolean {
-        return this._line > this.LinesPerFrame - this.VerticalBlankRows;
+        return this._rasterLine < 0;
     }
 
     /**
      * Gets the column within normal display (0-21). Positive decimals round down. Negative decimals round up.
+     * ScreenOriginX units is 1 cycle (4 pixels)
      * @returns 
      */
     getColumn(): number {
-        return ~~((100 + this._rowCycle - this.vicControlRegisters.ScreenOriginX) / 2) - 50;
+        return ~~((100 + this._rowCycle - this.vicControlRegisters.ScreenOriginX + this.BlankLeftCycles) / 2) - 50;
     }
 
     /**
      * Gets the row within normal display (0-22). Positive decimals round down. Negative decimals round up.
+     * Screen origin Y units is 2 lines
+     * Screen origin Y includes vertical blank rows
+     * Values >= 0 round down (i.e. row of 10.9 rounds to 10)
+     * Values < 0 round down (absolute up), i.e. -2.1 rounds to -3)
+     * round constant used to round correctly.
      */
     getRow(): number {
-        return ~~((800 + this._line - (this.vicControlRegisters.ScreenOriginY * 2)) / 8) - 100;
+        const round = 800;
+        return ~~((round + this._rasterLine - ((this.vicControlRegisters.ScreenOriginY * 2) - this.VerticalBlankRows)) / 8) - (round / 8);
     }
 
     isTextArea(): boolean {
