@@ -1,0 +1,23 @@
+export enum ControlRegisterEnum {
+    CR0_SCREEN_ORIGIN_X_COORDINATE = 0,
+    CR1_SCREEN_ORIGIN_Y_COORDINATE,
+    CR2_NO_OF_VIDEO_MATRIX_COLUMNS,
+    CR3_NO_OF_VIDEO_MATRIX_ROWS,
+
+    /**
+     * Scan line number
+     */
+    CR4_RASTER_VALUE,
+
+    CR5_BASE_ADDRESS_CONTROL,
+    CR6_LIGHT_PEN_HORIZONTAL,
+    CR7_LIGHT_PEN_VERTICAL,
+    CR8_POT_X,
+    CR9_POT_Y,
+    CRA_F_IN_1,
+    CRB_F_IN_2,
+    CRC_F_IN_3,
+    CRD_F_IN_4,
+    CRE_AMPLITUDE,
+    CRF_COLOR_CONTROL
+}

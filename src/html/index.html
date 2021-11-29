@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Vic20 Emulator</title>
+    <style>
+      html {
+        font-family: Arial, Helvetica, sans-serif;
+        background-color: black;
+        font-size: small;
+      }
+
+      h1 {
+        color: white;
+        font-weight: 600;
+      }
+
+      .info {
+        font-size: small;
+        color: gray;
+      }
+
+      .configure {
+        color: white;
+        font-size: small;
+      }
+
+      fieldset {
+        margin-top: 4px;
+        background-color: #fff;
+        padding: 4px;
+        width: 600px;
+        box-sizing: border-box;
+        background: #bbb;
+        display: none;
+        border: 0px;
+        border-radius: 8px;
+      }
+
+      label {
+        font-weight: 600;
+        width: 80px;
+        display: inline-block;
+      }
+
+      label::after {
+        content: ":";
+      }
+
+      .arrow {
+        border: solid yellow;
+        border-width: 0px 4px 4px 0px;
+        display: inline-block;
+        padding: 3px;
+        background: #222;
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+        cursor: pointer;
+      }
+
+      .right {
+        transform: rotate(-45deg);
+        -webkit-transform: rotate(-45deg);
+      }
+
+      .left {
+        transform: rotate(135deg);
+        -webkit-transform: rotate(135deg);
+      }
+
+      .up {
+        transform: rotate(-135deg);
+        -webkit-transform: rotate(-135deg);
+      }
+
+      .down {
+        transform: rotate(45deg);
+        -webkit-transform: rotate(45deg);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Vic20 Emulator</h1>
+
+    <canvas
+      id="screen"
+      width="600"
+      height="400"
+      style="border: 1px solid black"
+    ></canvas>
+
+    <div>
+      <label class="configure">Configure</label>
+      <input type="button" class="arrow down" id="configure" />
+    </div>
+
+    <fieldset id="configure-panel">
+      <label>ROMs</label>
+      <input type="file" id="file-roms" multiple />
+      <hr />
+      <label>Model</label>
+      <select name="expansion" id="expansion">
+        <option name="Unexpanded" value="unexpanded">Unexpanded</option>
+        <option name="Expanded3K" value="3k">Expanded 3K</option>
+        <option name="Expanded8K" value="8k">Expanded 8K</option>
+        <option name="Expanded16K" value="16k">Expanded 16K</option>
+        <option name="Expanded24K" value="24k">Expanded 24K</option>
+        <option name="Expanded32K" value="32k">Expanded 32K</option>
+      </select>
+      <select name="model" id="model">
+        <option name="PAL">PAL</option>
+        <option name="NTSC">NTSC</option>
+      </select>
+      <input type="button" id="reset" onclick="handleReset" value="Reset" />
+      <hr />
+      <!-- Stop / Start / Step -->
+      <input type="checkbox" id="toggle-debug" />Debug Mode
+
+      <div id="debug" name="debug" style="display: none">
+        <input type="button" id="stop" value="Stop" />
+        <input type="button" id="start" value="Start" />
+        <input type="button" id="cycle" value="Cycle" />
+        <input type="button" id="instruction" value="Instruction" />
+        <input type="button" id="frame" value="Frame" />
+
+        <select name="debug-option" id="debug-option">
+          <option value="cpu">Cpu (MOS6502)</option>
+          <option value="stack">Call stack</option>
+          <option value="memory">Memory</option>
+          <option value="vic">Vic (VIC6560/1)</option>
+          <option value="via1">Via1 (VIA6522)</option>
+          <option value="via2">Via2 (VIA6522)</option>
+          <option value="keyboard">Keyboard</option>
+        </select>
+        <textarea
+          rows="16"
+          id="debug-info"
+          style="display: block; width: 100%; box-sizing: border-box"
+        ></textarea>
+        <label>Page</label>
+        <input
+          type="number"
+          min="0"
+          max="255"
+          value="0"
+          class="slider"
+          id="debug-page"
+        />
+        <div id="breakpoint">
+          <label>Breakpoints</label>
+          <input
+            class="allowKeyboardEvents"
+            type="text"
+            id="debug-breakpoint"
+            placeholder="instruction:[instruction],address:[address],memory:[memory]"
+            style="width: 400px"
+          />
+        </div>
+      </div>
+      <hr />
+      <label>Speed</label>
+      <input
+        type="range"
+        min="1"
+        max="100"
+        value="50"
+        class="slider"
+        id="speed"
+      />
+      <input type="checkbox" id="autoSpeed" checked />Auto-speed
+      <div id="info" class="info"></div>
+      <hr />
+      <label>Carts</label>
+      <input type="file" id="file-cart" />
+      <button id="file-cart-load">Load cart</button>
+    </fieldset>
+
+    <script>
+      // Globals
+      let computer = null; // Vic20
+      let lastInfo = null; // to display debug info
+      let breakpointsAddress = []; // breakpoints
+      let breakpointsInstruction = []; // breakpoints
+      let breakpointsMemory = []; // breakpoints
+
+      // Disable F1 help
+      window.onhelp = () => {
+        return false;
+      };
+
+      // Init
+      function init() {
+        let expansion = document.querySelector("#expansion").value;
+        let model = document.querySelector("#model").value;
+        let canvas = document.getElementById("screen");
+        let roms = document.getElementById("file-roms").files;
+
+        if (computer != null) {
+          computer.stop();
+        }
+
+        if (model == "PAL") {
+          // PAL
+          computer = new window.vic20(canvas, expansion, true, roms);
+          computer.init();
+        } else {
+          // NTSC
+          computer = new window.vic20(canvas, expansion, false, roms);
+          computer.init();
+        }
+        setSpeed();
+
+        computer.infoEvent = (info) => {
+          let infoDiv = document.querySelector("#info");
+          let elSpeed = document.querySelector("#speed");
+
+          infoDiv.innerText = `${info.actualFramesPerSecond} fps (${(
+            (100 * info.actualFramesPerSecond) /
+            info.targetFramesPerSecond
+          ).toFixed(0)}%)`;
+
+          elSpeed.value = info.speed;
+        };
+
+        computer.debugHandler = (info) => {
+          lastInfo = info;
+          displayDebug(lastInfo);
+
+          // reached a breakpoint?
+          if (
+            breakpointsAddress.length > 0 &&
+            breakpointsAddress.includes(info.pc())
+          ) {
+            this.toggleDebugButtons(false);
+            computer.stop();
+          }
+          if (
+            breakpointsInstruction.length > 0 &&
+            breakpointsInstruction.includes(info.instruction().instruction)
+          ) {
+            this.toggleDebugButtons(false);
+            computer.stop();
+          }
+          if (
+            breakpointsMemory.length > 0 &&
+            breakpointsMemory.includes(info.instructionMemory())
+          ) {
+            debugger;
+            this.toggleDebugButtons(false);
+            computer.stop();
+          }
+        };
+      }
+
+      // Bootstrap code
+      function ready(fn) {
+        // Configure handler
+        document.querySelector("#configure").onclick = (e) => {
+          debugger;
+          let elConfigureButton = document.querySelector("#configure");
+          let elConfigurePanel = document.querySelector("#configure-panel");
+          if (elConfigureButton.classList.contains("down")) {
+            elConfigurePanel.style.display = "block";
+            elConfigureButton.classList.add("up");
+            elConfigureButton.classList.remove("down");
+          } else {
+            elConfigurePanel.style.display = "none";
+            elConfigureButton.classList.add("down");
+            elConfigureButton.classList.remove("up");
+          }
+        };
+
+        // Reset handler
+        document.querySelector("#reset").onclick = (e) => {
+          init();
+        };
+        // Stop handler
+        document.querySelector("#stop").onclick = (e) => {
+          this.toggleDebugButtons(false);
+          debugger;
+          computer.stop();
+        };
+        // Start handler
+        document.querySelector("#start").onclick = (e) => {
+          this.toggleDebugButtons(true);
+          computer.start();
+        };
+        // Cycle handler
+        document.querySelector("#cycle").onclick = (e) => {
+          this.toggleDebugButtons(true);
+          computer.stepCycle();
+          this.toggleDebugButtons(false);
+        };
+        // Instruction handler
+        document.querySelector("#instruction").onclick = (e) => {
+          this.toggleDebugButtons(true);
+          computer.stepInstruction();
+          this.toggleDebugButtons(false);
+        };
+        // Frame handler
+        document.querySelector("#frame").onclick = (e) => {
+          this.toggleDebugButtons(true);
+          computer.frame();
+          this.toggleDebugButtons(false);
+        };
+
+        // toggle-debug handler
+        document.querySelector("#toggle-debug").onclick = (e) => {
+          toggleDebug(e);
+        };
+
+        // Changing debug option dropdown
+        document.querySelector("#debug-option").onchange = (e) => {
+          displayDebug(lastInfo);
+        };
+
+        // Changing debug option dropdown
+        document.querySelector("#debug-page").onchange = (e) => {
+          displayDebug(lastInfo);
+        };
+
+        // Changing debug option dropdown
+        document.querySelector("#debug-breakpoint").onkeyup = (e) => {
+          // parse breakpoint
+          // instruction: <number>, address: <number>, memory: <memory>
+          let breakpoint = e.target.value;
+          let arr = breakpoint.split(",").map((e) => e.trim());
+          breakpointsAddress = [];
+          breakpointsInstruction = [];
+          breakpointsMemory = [];
+          for (item of arr) {
+            // split on ':'
+            let values = item.split(":").map((e) => e.trim());
+            if (values[0].toLowerCase() === "address") {
+              breakpointsAddress.push(parseInt(values[1]));
+            } else if (values[0].toLowerCase() === "instruction") {
+              breakpointsInstruction.push(values[1]);
+            } else if (values[0].toLowerCase() === "memory") {
+              breakpointsMemory.push(parseInt(values[1]));
+            }
+          }
+        };
+
+        if (document.readyState != "loading") {
+          fn();
+        } else {
+          document.addEventListener("DOMContentLoaded", fn);
+        }
+      }
+
+      displayDebug = (info) => {
+        // Memory: display 16 bytes per line
+        elDebugInfo = document.querySelector("#debug-info");
+        elDebugOption = document.querySelector("#debug-option");
+        elDebugPage = document.querySelector("#debug-page");
+        switch (elDebugOption.value) {
+          case "cpu":
+            elDebugInfo.value = info.cpu(16);
+            break;
+          case "stack":
+            elDebugInfo.value = info.stack();
+            break;
+          case "memory":
+            let page = elDebugPage.value;
+            elDebugInfo.value = info.memory(page);
+            break;
+          case "vic":
+            elDebugInfo.value = info.vic();
+            break;
+        }
+      };
+
+      setSpeed = () => {
+        let elSpeed = document.querySelector("#speed");
+        let elAutoSpeed = document.querySelector("#autoSpeed");
+
+        let checked = elAutoSpeed.checked;
+        if (checked) computer.setAutoSpeed(true);
+        else {
+          computer.setSpeed(elSpeed.value);
+          computer.setAutoSpeed(false);
+        }
+      };
+
+      ready(() => {
+        // Bootstrap the vic 20
+        init();
+
+        // Speed Change
+        document.querySelector("#speed").onchange = (e) => {
+          setSpeed();
+        };
+
+        // debug-page change
+        /*
+        document.querySelector("#debug-memory-page").onchange = (e) => {
+          displayMemoryPage(e.target.value);
+        };
+        */
+
+        document.querySelector("#autoSpeed").onchange = (e) => {
+          setSpeed();
+        };
+
+        // Load cart
+        document.querySelector("#file-cart-load").onclick = () => {
+          // no file selected to read
+          if (document.querySelector("#file-cart").value == "") {
+            console.log("No file selected");
+            return;
+          }
+
+          var file = document.querySelector("#file-cart").files[0];
+
+          var reader = new FileReader();
+          reader.onload = function (e) {
+            debugger;
+            // binary data
+            let data = new Uint8Array(e.target.result);
+            computer.loadCart(data);
+          };
+          reader.onerror = function (e) {
+            // error occurred
+            console.log("Error : " + e.type);
+          };
+          reader.readAsArrayBuffer(file);
+        };
+      });
+
+      toggleDebugButtons = (running) => {
+        // Stop handler
+        let elStop = document.querySelector("#stop");
+        let elStart = document.querySelector("#start");
+        let elCycle = document.querySelector("#cycle");
+        let elInstruction = document.querySelector("#instruction");
+        let elFrame = document.querySelector("#frame");
+
+        elStop.disabled = !running;
+        elStart.disabled = running;
+        elCycle.disabled = running;
+        elInstruction.disabled = running;
+        elFrame.disabled = running;
+      };
+
+      toggleDebug = (e) => {
+        // toggle visibility of debug div
+        elDebug = document.querySelector("#debug");
+        elDebug.style.display = e.target.checked ? "block" : "none";
+        if (e.target.checked) {
+          this.toggleDebugButtons(false);
+          computer.stop();
+        } else {
+          computer.stop();
+          computer.start();
+        }
+
+        computer.setDebug(e.target.checked);
+      };
+    </script>
+  </body>
+</html>
