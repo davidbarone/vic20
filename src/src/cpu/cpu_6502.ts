@@ -3,39 +3,7 @@ import Memory from "../memory/memory";
 import cpu6502Internal from "./cpu_6502_internal";
 import Utils from "../lib/utils"
 import AddressMode from "./address_mode";
-
-/**
- * Debug structure
- */
-interface Debug {
-  offset: number,
-  offsetFormatted: string,
-  bytes: number,
-  opCode: number,
-  opCodeFormatted: string,
-  instruction: string,
-  operand: number,
-  operandSigned: number,
-  operandFormatted: string,
-  raw: Array<number>,
-  rawFormatted: string,
-  regPC: number,
-  regPCFormatted: string,
-  regSP: number,
-  regSPFormatted: string,
-  regA: number,
-  regAFormatted: string,
-  regX: number,
-  regXFormatted: string,
-  regY: number,
-  regYFormatted: string,
-  processorStatus: string,
-  registersDebug: string,
-  memory: number | null,
-  memoryFormatted: string,
-  disassembly: string,
-  complete: string
-}
+import CpuDebugInfo from "./cpu_debug_info";
 
 // **********************************
 //
@@ -196,7 +164,7 @@ export default class cpu6502 extends cpu6502Internal {
   /**
    * History of recent CPU instructions. Used for debug purposes
    */
-  private history: Array<Debug> = [];
+  private history: Array<CpuDebugInfo> = [];
 
   /**
    * Number of instructions stored in cpu history.
@@ -818,7 +786,7 @@ export default class cpu6502 extends cpu6502Internal {
   /**
    * Outputs debug information for the current instruction
    */
-  protected getDebugInfo(offset: number, rule: OpCodeGenRule, operand: number, REG: number): Debug {
+  protected getDebugInfo(offset: number, rule: OpCodeGenRule, operand: number, REG: number): CpuDebugInfo {
     let instruction = rule.instruction;
     let addressMode = rule.addressMode;
 

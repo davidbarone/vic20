@@ -1,5 +1,6 @@
 import via6522 from "./via_6522"
-import { inputListener, JoystickState } from "./input_listener";
+import { inputListener } from "./input_listener";
+import { JoystickState } from "./joystick_state";
 
 export default class joystick {
 

@@ -97,6 +97,7 @@ TypeScript:
 - WebPack + TypeScript: https://exploringjs.com/tackling-ts/ch_webpack-typescript.html
 - WebPack + TypeScript: https://developerhandbook.com/webpack/webpack-typescript-from-scratch/
 - Babel + TypeScript: https://iamturns.com/typescript-babel/
+- Google TypeScript style guide: https://google.github.io/styleguide/tsguide.html
 
 Vic20:
 ------
@@ -112,6 +113,7 @@ MOS 6502 cpu:
 ## Vic20 Features
 
 The following features are available at the moment:
+
 - MOS6502 emulation (successfully runs https://github.com/Klaus2m5/6502_65C02_functional_tests)
 - Vic6560/6561 emulation
   - PAL/NTSC support
@@ -130,6 +132,7 @@ The following features are available at the moment:
 ## ToDo List
 
 The following are still being worked on and are not available yet:
+
 - Sound
 - Cassette / tape loading and saving
 - Unsupported CPU instructions (as used by some games)

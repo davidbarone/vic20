@@ -5,13 +5,7 @@
 // on the 6502.
 // -------------------------------------
 
-interface AddressModeRule {
-    mode: string,
-    desc: string,
-    bytes: number,
-    pattern: RegExp,
-    format: string
-}
+import AddressModeInfo from "./address_mode_info"
 
 class AddressMode {
     private static hexByte: string = '[$][a-fA-F0-9]{2}';
@@ -19,7 +13,7 @@ class AddressMode {
     private static decimal: string = '\\d+';
     private static label: string = '[A-Za-z][A-Za-z0-9_]*'  // can be label or defined symbol
 
-    private static addressModes: Array<AddressModeRule> = [
+    private static addressModes: Array<AddressModeInfo> = [
         { mode: "A", desc: "Accumulator", bytes: 2, pattern: new RegExp('^[A]$'), format: 'A' },
         { mode: "#", desc: "Immediate", bytes: 2, pattern: new RegExp(`^[#](?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))$`), format: '#${value}' }, // 8 bit
         { mode: "zpg", desc: "ZeroPage", bytes: 2, pattern: new RegExp(`^(?<value>(${AddressMode.decimal}|${AddressMode.hexByte}))$`), format: '${value}' },  // 8 bit
@@ -58,7 +52,7 @@ class AddressMode {
     // ---------------------------------------------
     // Returns an address mode by name
     // ---------------------------------------------
-    static GetRule(mode: string): AddressModeRule {
+    static GetRule(mode: string): AddressModeInfo {
         let modes = this.addressModes.filter(am => am.mode === mode);
         if (modes.length !== 1) {
             throw new Error(`Invalid address mode: ${mode}`);
@@ -71,7 +65,7 @@ class AddressMode {
     // the address mode that matches the
     // syntax. Used to parse assembly code.
     // ------------------------------------
-    static Parse(operand: string, labels: { [name: string]: number; }, pc: number): { AddressMode: AddressModeRule; Value: number | null; } {
+    static Parse(operand: string, labels: { [name: string]: number; }, pc: number): { AddressMode: AddressModeInfo; Value: number | null; } {
 
 
         operand = operand.toUpperCase().trim();
