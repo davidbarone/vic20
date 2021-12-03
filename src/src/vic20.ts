@@ -107,9 +107,9 @@ export class Vic20 {
                     if (ctx) {
                         debugger;
                         ctx.font = "8px Arial";
-                        ctx.strokeStyle = "#555555";
-                        ctx.fillStyle = "#555555";
-                        ctx.fillText("No ROMs loaded. Use configuration to load.", 0, 8);
+                        ctx.strokeStyle = "#aaa";
+                        ctx.fillStyle = "#aaa";
+                        ctx.fillText("No ROMs loaded. Use configuration to load.", 2, 10);
                     }
                 }
             });
