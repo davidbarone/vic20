@@ -8,6 +8,10 @@
         background-color: transparent;
         font-size: small;
       }
+      body {
+        padding: 0px;
+        margin: 0px;
+      }
 
       h1 {
         color: white;
@@ -24,8 +28,11 @@
         font-size: small;
       }
 
+      .configure-container {
+        margin-top: 8px;
+      }
+
       fieldset {
-        margin-top: 4px;
         background-color: #fff;
         padding: 4px;
         width: 600px;
@@ -87,29 +94,34 @@
       style="background: black"
     ></canvas>
 
-    <div>
+    <div class="configure-container">
       <label class="configure">Configure</label>
       <input type="button" class="arrow down" id="configure" />
     </div>
 
     <fieldset id="configure-panel">
-      <label>ROMs</label>
-      <input type="file" id="file-roms" multiple />
-      <hr />
+      <div class="field">
+        <label>ROMs</label>
+        <input type="file" id="file-roms" />
+      </div>
+      <div class="field">
+        <label>Carts</label>
+        <select id="select-cart"></select>
+      </div>
       <label>Model</label>
       <select name="expansion" id="expansion">
         <option name="Unexpanded" value="unexpanded">Unexpanded</option>
-        <option name="Expanded3K" value="3k">Expanded 3K</option>
-        <option name="Expanded8K" value="8k">Expanded 8K</option>
-        <option name="Expanded16K" value="16k">Expanded 16K</option>
-        <option name="Expanded24K" value="24k">Expanded 24K</option>
-        <option name="Expanded32K" value="32k">Expanded 32K</option>
+        <option name="Expanded3K" value="expanded_3k">Expanded 3K</option>
+        <option name="Expanded8K" value="expanded_8k">Expanded 8K</option>
+        <option name="Expanded16K" value="expanded_16k">Expanded 16K</option>
+        <option name="Expanded24K" value="expanded_24k">Expanded 24K</option>
+        <option name="Expanded32K" value="expanded_32k">Expanded 32K</option>
       </select>
       <select name="model" id="model">
         <option name="PAL">PAL</option>
         <option name="NTSC">NTSC</option>
       </select>
-      <input type="button" id="reset" onclick="handleReset" value="Reset" />
+      <input type="button" id="reset" value="Reset" />
       <hr />
       <!-- Stop / Start / Step -->
       <input type="checkbox" id="toggle-debug" />Debug Mode
@@ -194,75 +206,100 @@
         return false;
       };
 
+      function setRoms() {
+        let roms = document.getElementById("file-roms").files[0];
+        let canvas = document.getElementById("screen");
+        let expansion = document.querySelector("#expansion").value;
+        let model = document.querySelector("#model").value;
+
+        if (computer != null) {
+          computer.stop();
+        }
+        computer = new window.vic20(canvas, expansion, model == "PAL", roms);
+        computer.validateRoms().then((isValid) => {
+          if (isValid) {
+            var options = document.querySelectorAll("#select-cart option");
+            options.forEach((o) => o.remove());
+            let carts = computer.cartridges();
+            let cart = document.getElementById("select-cart");
+            cart.add(new Option(undefined));
+            for (let c of carts) {
+              cart.add(new Option(c.name));
+            }
+          }
+        });
+      }
+
       // Init
       function init() {
+        alert("init");
         let expansion = document.querySelector("#expansion").value;
         let model = document.querySelector("#model").value;
         let canvas = document.getElementById("screen");
-        let roms = document.getElementById("file-roms").files;
+        let roms = document.getElementById("file-roms").files[0];
+        let selectedCart = document.getElementById("select-cart").value;
 
         if (computer != null) {
           computer.stop();
         }
 
-        if (model == "PAL") {
-          // PAL
-          computer = new window.vic20(canvas, expansion, true, roms);
+        computer = new window.vic20(canvas, expansion, model == "PAL", roms);
+
+        computer.validateRoms().then((isValid) => {
           computer.init();
-        } else {
-          // NTSC
-          computer = new window.vic20(canvas, expansion, false, roms);
-          computer.init();
-        }
-        setSpeed();
+          setSpeed();
 
-        computer.infoEvent = (info) => {
-          let infoDiv = document.querySelector("#info");
-          let elSpeed = document.querySelector("#speed");
+          computer.infoEvent = (info) => {
+            let infoDiv = document.querySelector("#info");
+            let elSpeed = document.querySelector("#speed");
 
-          infoDiv.innerText = `${info.actualFramesPerSecond} fps (${(
-            (100 * info.actualFramesPerSecond) /
-            info.targetFramesPerSecond
-          ).toFixed(0)}%)`;
+            infoDiv.innerText = `${info.actualFramesPerSecond} fps (${(
+              (100 * info.actualFramesPerSecond) /
+              info.targetFramesPerSecond
+            ).toFixed(0)}%)`;
 
-          elSpeed.value = info.speed;
-        };
+            elSpeed.value = info.speed;
+          };
 
-        computer.debugHandler = (info) => {
-          lastInfo = info;
-          displayDebug(lastInfo);
+          computer.debugHandler = (info) => {
+            lastInfo = info;
+            displayDebug(lastInfo);
 
-          // reached a breakpoint?
-          if (
-            breakpointsAddress.length > 0 &&
-            breakpointsAddress.includes(info.pc())
-          ) {
-            this.toggleDebugButtons(false);
-            computer.stop();
+            // reached a breakpoint?
+            if (
+              breakpointsAddress.length > 0 &&
+              breakpointsAddress.includes(info.pc())
+            ) {
+              this.toggleDebugButtons(false);
+              computer.stop();
+            }
+            if (
+              breakpointsInstruction.length > 0 &&
+              breakpointsInstruction.includes(info.instruction().instruction)
+            ) {
+              this.toggleDebugButtons(false);
+              computer.stop();
+            }
+            if (
+              breakpointsMemory.length > 0 &&
+              breakpointsMemory.includes(info.instructionMemory())
+            ) {
+              this.toggleDebugButtons(false);
+              computer.stop();
+            }
+          };
+
+          // Load cart?
+          if (selectedCart) {
+            computer.loadCartByName(selectedCart);
           }
-          if (
-            breakpointsInstruction.length > 0 &&
-            breakpointsInstruction.includes(info.instruction().instruction)
-          ) {
-            this.toggleDebugButtons(false);
-            computer.stop();
-          }
-          if (
-            breakpointsMemory.length > 0 &&
-            breakpointsMemory.includes(info.instructionMemory())
-          ) {
-            debugger;
-            this.toggleDebugButtons(false);
-            computer.stop();
-          }
-        };
+        });
       }
 
       // Bootstrap code
       function ready(fn) {
         // Configure handler
         document.querySelector("#configure").onclick = (e) => {
-          debugger;
           let elConfigureButton = document.querySelector("#configure");
           let elConfigurePanel = document.querySelector("#configure-panel");
           if (elConfigureButton.classList.contains("down")) {
@@ -283,7 +320,6 @@
         // Stop handler
         document.querySelector("#stop").onclick = (e) => {
           this.toggleDebugButtons(false);
-          debugger;
           computer.stop();
         };
         // Start handler
@@ -347,6 +383,10 @@
           }
         };
 
+        document.querySelector("#file-roms").onchange = (e) => {
+          setRoms();
+        };
+
         if (document.readyState != "loading") {
           fn();
         } else {
@@ -397,13 +437,6 @@
           setSpeed();
         };
 
-        // debug-page change
-        /*
-        document.querySelector("#debug-memory-page").onchange = (e) => {
-          displayMemoryPage(e.target.value);
-        };
-        */
-
         document.querySelector("#autoSpeed").onchange = (e) => {
           setSpeed();
         };
@@ -420,7 +453,6 @@
 
           var reader = new FileReader();
           reader.onload = function (e) {
-            debugger;
             // binary data
             let data = new Uint8Array(e.target.result);
             computer.loadCart(data);

@@ -2,79 +2,88 @@
 // This class used to simplify the loading process
 // All ROMs will be in a single FileList, together with an index.js
 
-import { ResolvePlugin } from "webpack";
+import { RomFileType } from "./rom_file_type";
+import RomIndexInfo from "./rom_index_info";
+import { RomRegion } from "./rom_region";
+import jsZip from "jszip";
 
 export default class Roms {
 
-    private files: File[];
-    private isPal: boolean;
-    private indexFile: File | undefined;
-    private index: { name: string, fileName: string, fileType: string, region: string }[] = [];
+    private _file: File; // the zip file containing all ROMs
+    private _roms: RomIndexInfo[] = [];
+    private _isValid: boolean = false;
 
     /**
     * constructor
     * @param model The memory model (unexpanded, full)
     */
-    public constructor(files: FileList, isPal: boolean) {
-        debugger;
-        this.files = Array.from(files);
-        let that = this;
-
-        // parse the index.json file
-        this.indexFile = this.files.find(f => f.name.toLowerCase() === "index.json");
-        this.isPal = isPal;
+    public constructor(file: File) {
+        this._file = file;
     }
 
-    public async hasAllRoms(): Promise<boolean> {
-        let region = this.isPal ? "pal" : "ntsc";
-        debugger;
-        return this.getIndex()
-            .then(index => {
-                return (
-                    index.find(i => i.fileType === "kernal" && i.region === region) !== undefined &&
-                    index.find(i => i.fileType === "basic" && i.region === "default") !== undefined &&
-                    index.find(i => i.fileType === "character" && i.region === "default") !== undefined
-                );
-            });
+    public isValid(): boolean {
+        return this._isValid;
     }
 
-    public async getRom(romType: string, region: string): Promise<Uint8Array> {
-        return this.getIndex()
-            .then(index => {
-                let rom: { name: string, fileName: string, fileType: string, region: string } | undefined = index.find(i => i.fileType.toLowerCase() === romType.toLowerCase() && i.region.toLowerCase() === region.toLowerCase());
-                let file: File = this.files.filter(f => f.name.toLowerCase() === rom?.fileName)[0];
-                return this.readFileBinary(file);
-            })
+    public roms(): RomIndexInfo[] {
+        return this._roms;
     }
 
-    private async getIndex(): Promise<{ name: string, fileName: string, fileType: string, region: string }[]> {
-        if (this.indexFile) {
-            return this.readFileText(this.indexFile)
-                .then(str => {
-                    let obj: {
-                        name: string, fileName: string, fileType: string, region: string
-                    }[] = JSON.parse(str);
-                    return obj;
-                });
-        } else {
-            return [];
-        }
+    public cartridges(): RomIndexInfo[] {
+        return this._roms.filter(r => r.fileType === RomFileType.cartridge);
     }
 
-    private readFileText = (file: File): Promise<string> => {
-        return new Promise<any>((resolve, reject) => {
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                if (e && e.target && e.target.result) {
-                    let result = e.target.result as string;
-                    resolve(result);
+    public async validate(): Promise<boolean> {
+
+        return new Promise(async (resolve, reject) => {
+            let results: RomIndexInfo[] = [];     // index
+            let romData: any = {};             // contents of all roms
+
+            if (!this._file) {
+                this._isValid = false;
+                resolve(false);
+            } else {
+
+                let zipFileData = await this.readFileBinary(this._file);
+                let zip = await jsZip.loadAsync(zipFileData);
+
+                for (let filename of Object.keys(zip.files)) {
+                    // get contents
+                    if (filename.toLowerCase() === "index.json") {
+                        let fileData = await zip.files[filename].async('string');
+                        results = JSON.parse(fileData);
+                    } else {
+                        let fileData = new Uint8Array(await zip.files[filename].async('nodebuffer'));
+                        romData[filename] = fileData
+                    }
                 }
-            };
-            reader.onerror = function (e) {
-                // error occurred
-                throw new Error("Error : " + e.type);
-            };
-            reader.readAsText(file);
+
+                // Finally loop backwards through index - if cannot find rom, remove.
+                for (var i = results.length - 1; i >= 0; i--) {
+                    if (results[i].fileName in romData) {
+                        results[i].data = romData[results[i].fileName];
+                    } else {
+                        results.splice(i, 1);
+                    }
+                }
+
+                results.sort((a, b) => b.name > a.name ? 1 : -1);
+
+                // finally, before returning, check minimum files present
+                if (
+                    results.find(i => i.fileType === RomFileType.kernal && i.region === RomRegion.pal) == undefined ||
+                    results.find(i => i.fileType === RomFileType.kernal && i.region === RomRegion.ntsc) == undefined ||
+                    results.find(i => i.fileType === RomFileType.basic && i.region === RomRegion.default) == undefined ||
+                    results.find(i => i.fileType === RomFileType.character && i.region === RomRegion.default) == undefined
+                ) {
+                    this._isValid = false;
+                    resolve(false);
+                }
+
+                this._roms = results;
+                this._isValid = true;
+                resolve(true);
+            }
         });
     }
 

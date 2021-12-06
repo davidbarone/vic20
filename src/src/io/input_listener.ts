@@ -66,7 +66,6 @@ export class inputListener {
             // Cancel the event
             let el = e.target as Element;
             if (!el.classList.contains("allowKeyboardEvents")) {
-                debugger;
                 e.preventDefault();
             }
         }
@@ -104,7 +103,6 @@ export class inputListener {
             // Cancel the event
             let el = e.target as Element;
             if (!el.classList.contains("allowKeyboardEvents")) {
-                debugger;
                 e.preventDefault();
             }
         }

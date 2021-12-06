@@ -1,4 +1,5 @@
 import Utils from "../lib/utils";
+import { MemoryModel } from "./memory_model";
 
 // ---------------------------------
 // memory.ts
@@ -102,7 +103,7 @@ export default class Memory {
      * constructor
      * @param model The memory model (unexpanded, full)
      */
-    constructor(expansion: string = "unexpanded") {
+    constructor(expansion: MemoryModel = MemoryModel.unexpanded) {
         this.mem = new Uint8Array(this.size);
         this.readFunc = new Array(this.size);
         this.writeFunc = new Array(this.size);
@@ -116,7 +117,7 @@ export default class Memory {
             this.writeFunc[i] = this.writeMem;
         }
 
-        if (this.expansion !== "test") {
+        if (this.expansion !== MemoryModel.test) {
             for (let i = 0x9000; i <= 0x90FF; i++) this.writeFunc[i] = this.writeNull;  // VIC6560
             for (let i = 0x9110; i <= 0x911F; i++) this.writeFunc[i] = this.writeNull;  // VIA1
             for (let i = 0x9120; i <= 0x912F; i++) this.writeFunc[i] = this.writeNull;  // VIA2
@@ -132,11 +133,11 @@ export default class Memory {
             // Add in expansion memory
             // Note that RAM must be contiguous for BASIC
             // BLK 5 is generally not accessible
-            if (this.expansion === "3k") for (let i = 0x0400; i <= 0x0FFF; i++) this.writeFunc[i] = this.writeMem;  // RAM1,2,3
-            if (this.expansion === "8k") for (let i = 0x2000; i <= 0x3FFF; i++) this.writeFunc[i] = this.writeMem;  // BLK1
-            if (this.expansion === "16k") for (let i = 0x2000; i <= 0x5FFF; i++) this.writeFunc[i] = this.writeMem;  // BLK1,2
-            if (this.expansion === "24k") for (let i = 0x2000; i <= 0x7FFF; i++) this.writeFunc[i] = this.writeMem;  // BLK11,2,3
-            if (this.expansion === "32k") {
+            if (this.expansion === MemoryModel.expanded_3k) for (let i = 0x0400; i <= 0x0FFF; i++) this.writeFunc[i] = this.writeMem;  // RAM1,2,3
+            if (this.expansion === MemoryModel.expanded_8k) for (let i = 0x2000; i <= 0x3FFF; i++) this.writeFunc[i] = this.writeMem;  // BLK1
+            if (this.expansion === MemoryModel.expanded_16k) for (let i = 0x2000; i <= 0x5FFF; i++) this.writeFunc[i] = this.writeMem;  // BLK1,2
+            if (this.expansion === MemoryModel.expanded_24k) for (let i = 0x2000; i <= 0x7FFF; i++) this.writeFunc[i] = this.writeMem;  // BLK11,2,3
+            if (this.expansion === MemoryModel.expanded_32k) {
                 // BLK11,2,3,5
                 for (let i = 0x2000; i <= 0x7FFF; i++) this.writeFunc[i] = this.writeMem;
                 for (let i = 0xA000; i <= 0xBFFF; i++) this.writeFunc[i] = this.writeMem;

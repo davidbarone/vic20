@@ -7,6 +7,10 @@ import keyboard from "./io/keyboard";
 import joystick from "./io/joystick"
 import OpCodeGenRule from "./cpu/op_code_gen_rule"
 import Roms from "./memory/roms"
+import { MemoryModel } from "./memory/memory_model"
+import RomIndexInfo from "./memory/rom_index_info"
+import { RomFileType } from "./memory/rom_file_type"
+import { RomRegion } from "./memory/rom_region"
 
 export class Vic20 {
 
@@ -25,7 +29,7 @@ export class Vic20 {
     autoSpeed: boolean;
     break: boolean = false;         // set to true to stop execution (breakpoint)
     isPal: boolean;         //
-    roms: Roms;             // ROMs
+    roms: Roms;
 
     private debug: boolean = false;
     private timeoutId: number = 0;          // controls running / stopping of frames
@@ -50,7 +54,7 @@ export class Vic20 {
         instructionMemory: () => number | null
     }): void
 
-    constructor(canvas: HTMLCanvasElement, expansion: string = 'unexpanded', isPal: boolean = false, roms: FileList) {
+    constructor(canvas: HTMLCanvasElement, expansion: MemoryModel = MemoryModel.unexpanded, isPal: boolean = false, romZip: File) {
         this.canvas = canvas;
         this.Memory = new Memory(expansion);
         this.Cpu = new cpu6502(this.Memory);
@@ -68,7 +72,14 @@ export class Vic20 {
         this.speed = 80;
         this.autoSpeed = false;
         this.isPal = isPal;
-        this.roms = new Roms(roms, this.isPal);
+        this.roms = new Roms(romZip);
+    }
+
+    /**
+     * Validates the ROM zip file.
+     */
+    public async validateRoms(): Promise<boolean> {
+        return this.roms.validate();
     }
 
     /**
@@ -92,27 +103,23 @@ export class Vic20 {
     /**
      * Initialises the Vic20 computer
      */
-    init() {
-        // Check all ROMs present?
-        this.roms.hasAllRoms()
-            .then(hasRoms => {
-                if (hasRoms) {
-                    console.log("Vic20 init");
-                    this.reset();
-                    console.log(this.Memory);
-                    this.timeoutId = window.setTimeout(() => this.frameRepeat(), this.frameDelay);
-                } else {
-                    // Update canvas
-                    let ctx: CanvasRenderingContext2D | null = this.canvas.getContext("2d");
-                    if (ctx) {
-                        debugger;
-                        ctx.font = "8px Arial";
-                        ctx.strokeStyle = "#aaa";
-                        ctx.fillStyle = "#aaa";
-                        ctx.fillText("No ROMs loaded. Use configuration to load.", 2, 10);
-                    }
-                }
-            });
+    init(): void {
+        alert('vic20.init');
+
+        if (this.roms.isValid()) {
+            console.log("Vic20 init");
+            this.reset();
+            this.timeoutId = window.setTimeout(() => this.frameRepeat(), this.frameDelay);
+        } else {
+            // Update canvas
+            let ctx: CanvasRenderingContext2D | null = this.canvas.getContext("2d");
+            if (ctx) {
+                ctx.font = "8px Arial";
+                ctx.strokeStyle = "#aaa";
+                ctx.fillStyle = "#aaa";
+                ctx.fillText("No ROMs loaded. Use configuration to load.", 2, 10);
+            }
+        }
     }
 
     stop() {
@@ -151,12 +158,10 @@ export class Vic20 {
     frameRepeat() {
 
         this.frame();
-
         this.c++;
 
         // Every 50 frames, we recalculate the speed, and adjust frameDelay:
         if (this.c == 50) {
-
 
             let endTime = new Date().getTime();
             let duration = endTime - this.startTime;
@@ -195,6 +200,17 @@ export class Vic20 {
         }
     }
 
+    public cartridges(): RomIndexInfo[] {
+        return this.roms.cartridges();
+    }
+
+    public loadCartByName(name: string): void {
+        let cart = this.roms.cartridges().find(c => c.name === name);
+        if (cart) {
+            this.loadCart(cart.data);
+        }
+    }
+
     public loadCart(data: Uint8Array) {
         // first 2 bytes  are the loading address
         let loadAddress = data[0] + (data[1] << 8);
@@ -228,6 +244,8 @@ export class Vic20 {
                 0x60,
             ];
 
+            let startAddress: number = 320;
+
             for (var i = 0; i < bootStrap.length; i++) this.Memory.writeByte(320 + i, bootStrap[i]);
             if (
                 data[8] == 0x41 &&
@@ -236,40 +254,46 @@ export class Vic20 {
                 data[11] == 0xc2 &&
                 data[12] == 0xcd
             ) {
-                alert("Type SYS64802 to start");
+                startAddress = 64802;
             } else {
-                alert("Type SYS320 to start");
+                startAddress = 320;
             }
-
             this.Memory.loadData(data, loadAddress);
+            this.Cpu.reset(startAddress);
         }
     }
 
     /**
      * Resets the machine
      */
-    reset() {
+    public reset(): void {
+        alert('vic20.reset');
         console.log("Vic20 reset");
 
-        this.roms.getRom("character", "default")
-            .then(romChar => {
-                this.Memory.loadData(romChar, 0x8000);
-                console.log("Loaded char ROM at 0x8000");
-                return this.roms.getRom("basic", "default");
-            })
-            .then(romBasic => {
-                this.Memory.loadData(romBasic, 0xC000);
-                console.log("Loaded BASIC ROM at 0xC000");
-                return this.roms.getRom("kernal", this.isPal ? "pal" : "ntsc");
-            })
-            .then(romKernal => {
-                this.Memory.loadData(romKernal, 0xE000);
-                console.log("Loaded kernal ROM at 0xE000");
+        let romChar = this.roms.roms().find(r => r.fileType == RomFileType.character && r.region == RomRegion.default);
+        if (!romChar) {
+            throw Error("Missing char ROM.");
+        }
+        this.Memory.loadData(romChar.data, 0x8000);
+        console.log("Loaded char ROM at 0x8000");
 
-                this.via1.reset();
-                this.via2.reset();
-                this.Cpu.reset();
-            })
+        let romBasic = this.roms.roms().find(r => r.fileType == RomFileType.basic && r.region == RomRegion.default);
+        if (!romBasic) {
+            throw Error("Missing BASIC ROM.");
+        }
+        this.Memory.loadData(romBasic.data, 0xC000);
+        console.log("Loaded BASIC ROM at 0xC000");
+
+        let romKernal = this.roms.roms().find(r => r.fileType == RomFileType.kernal && r.region === (this.isPal ? RomRegion.pal : RomRegion.ntsc));
+        if (!romKernal) {
+            throw Error("Missing kernal ROM.");
+        }
+        this.Memory.loadData(romKernal.data, 0xE000);
+        console.log("Loaded kernal ROM at 0xE000");
+
+        this.via1.reset();
+        this.via2.reset();
+        this.Cpu.reset();
     }
 
     private lastNmi: boolean = false;
