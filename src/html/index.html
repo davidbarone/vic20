@@ -118,8 +118,8 @@
         <option name="Expanded32K" value="expanded_32k">Expanded 32K</option>
       </select>
       <select name="model" id="model">
-        <option name="PAL">PAL</option>
-        <option name="NTSC">NTSC</option>
+        <option name="pal" value="pal">PAL</option>
+        <option name="ntsc" value="ntsc">NTSC</option>
       </select>
       <input type="button" id="reset" value="Reset" />
       <hr />
@@ -206,21 +206,28 @@
         return false;
       };
 
-      function setRoms() {
-        let roms = document.getElementById("file-roms").files[0];
-        let canvas = document.getElementById("screen");
-        let expansion = document.querySelector("#expansion").value;
-        let model = document.querySelector("#model").value;
+      function getRoms() {
+        let zip = document.getElementById("file-roms").files[0];
+        let zipRoms = new roms(zip);
+        return zipRoms;
+      }
 
-        if (computer != null) {
-          computer.stop();
+      async function getRom(name) {
+        let zip = document.getElementById("file-roms").files[0];
+        let zipRoms = new roms(zip);
+        let isValid = await zipRoms.validate();
+        if (isValid) {
+          return zipRoms.rom(name);
         }
-        computer = new window.vic20(canvas, expansion, model == "PAL", roms);
-        computer.validateRoms().then((isValid) => {
+      }
+
+      function setRoms() {
+        let zipRoms = getRoms();
+        zipRoms.validate().then((isValid) => {
           if (isValid) {
             var options = document.querySelectorAll("#select-cart option");
             options.forEach((o) => o.remove());
-            let carts = computer.cartridges();
+            let carts = zipRoms.cartridges();
             let cart = document.getElementById("select-cart");
             cart.add(new Option(undefined));
             for (let c of carts) {
@@ -232,21 +239,21 @@
 
       // Init
       function init() {
-        alert("init");
-        let expansion = document.querySelector("#expansion").value;
-        let model = document.querySelector("#model").value;
+        let elExpansion = document.querySelector("#expansion");
+        let elModel = document.querySelector("#model");
+        let zipRoms = getRoms();
+
+        let expansion = elExpansion.value;
+        let model = elModel.value;
         let canvas = document.getElementById("screen");
-        let roms = document.getElementById("file-roms").files[0];
         let selectedCart = document.getElementById("select-cart").value;
 
-        if (computer != null) {
-          computer.stop();
-        }
+        zipRoms.validate().then((isValid) => {
+          if (computer != null) {
+            computer.stop();
+          }
+          computer = new window.vic20(canvas, expansion, model, zipRoms);
 
-        computer = new window.vic20(canvas, expansion, model == "PAL", roms);
-
-        computer.validateRoms().then((isValid) => {
-          computer.init();
           setSpeed();
 
           computer.infoEvent = (info) => {
@@ -290,8 +297,17 @@
           };
 
           // Load cart?
+          let resetAddress = undefined;
           if (selectedCart) {
-            computer.loadCartByName(selectedCart);
+            resetAddress = computer.loadCartByName(selectedCart);
+          }
+
+          // Start computer
+          debugger;
+          if (resetAddress) {
+            computer.reset(resetAddress);
+          } else {
+            computer.reset();
           }
         });
       }
@@ -441,6 +457,19 @@
           setSpeed();
         };
 
+        // Select Cart
+        document.querySelector("#select-cart").onchange = async (e) => {
+          // Update the memory + model required for the cart
+          let elExpansion = document.querySelector("#expansion");
+          let elModel = document.querySelector("#model");
+          let rom = await getRom(e.target.value);
+          if (rom) {
+            elExpansion.value = rom.memory;
+            elModel.value = rom.region;
+          }
+          elExpansion.disabled = elModel.disabled = e.target.value;
+        };
+
         // Load cart
         document.querySelector("#file-cart-load").onclick = () => {
           // no file selected to read
@@ -455,7 +484,13 @@
           reader.onload = function (e) {
             // binary data
             let data = new Uint8Array(e.target.result);
-            computer.loadCart(data);
+            debugger;
+            let resetAddress = computer.loadCart(data);
+            if (resetAddress) {
+              computer.reset(resetAddress);
+            } else {
+              computer.reset(resetAddress);
+            }
           };
           reader.onerror = function (e) {
             // error occurred

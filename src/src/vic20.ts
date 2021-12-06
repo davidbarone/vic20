@@ -11,6 +11,7 @@ import { MemoryModel } from "./memory/memory_model"
 import RomIndexInfo from "./memory/rom_index_info"
 import { RomFileType } from "./memory/rom_file_type"
 import { RomRegion } from "./memory/rom_region"
+import { VideoRegion } from "./video/video_region"
 
 export class Vic20 {
 
@@ -28,7 +29,7 @@ export class Vic20 {
     speed: number;          // speed configuration
     autoSpeed: boolean;
     break: boolean = false;         // set to true to stop execution (breakpoint)
-    isPal: boolean;         //
+    videoRegion: VideoRegion;
     roms: Roms;
 
     private debug: boolean = false;
@@ -54,12 +55,12 @@ export class Vic20 {
         instructionMemory: () => number | null
     }): void
 
-    constructor(canvas: HTMLCanvasElement, expansion: MemoryModel = MemoryModel.unexpanded, isPal: boolean = false, romZip: File) {
+    constructor(canvas: HTMLCanvasElement, expansion: MemoryModel = MemoryModel.unexpanded, videoRegion: VideoRegion = VideoRegion.pal, roms: Roms) {
         this.canvas = canvas;
         this.Memory = new Memory(expansion);
         this.Cpu = new cpu6502(this.Memory);
-        this.Vic6560 = new Vic6560(isPal, this.Memory, canvas, 0x9000);
-
+        debugger;
+        this.Vic6560 = new Vic6560(videoRegion, this.Memory, canvas, 0x9000);
         this.via1 = new via6522("VIA1", this.Memory, 0x9110);   // nmi
         this.via2 = new via6522("VIA2", this.Memory, 0x9120);   // irq
         this.keyboard = new keyboard(this.via2);
@@ -71,15 +72,8 @@ export class Vic20 {
         this.c = 0;
         this.speed = 80;
         this.autoSpeed = false;
-        this.isPal = isPal;
-        this.roms = new Roms(romZip);
-    }
-
-    /**
-     * Validates the ROM zip file.
-     */
-    public async validateRoms(): Promise<boolean> {
-        return this.roms.validate();
+        this.videoRegion = videoRegion;
+        this.roms = roms;
     }
 
     /**
@@ -99,28 +93,6 @@ export class Vic20 {
      * Provides information to the caller. Application can specify a handler optionally
      */
     infoEvent?: (info: { mode: string, speed: number, targetFramesPerSecond: number, actualFramesPerSecond: number }) => void;
-
-    /**
-     * Initialises the Vic20 computer
-     */
-    init(): void {
-        alert('vic20.init');
-
-        if (this.roms.isValid()) {
-            console.log("Vic20 init");
-            this.reset();
-            this.timeoutId = window.setTimeout(() => this.frameRepeat(), this.frameDelay);
-        } else {
-            // Update canvas
-            let ctx: CanvasRenderingContext2D | null = this.canvas.getContext("2d");
-            if (ctx) {
-                ctx.font = "8px Arial";
-                ctx.strokeStyle = "#aaa";
-                ctx.fillStyle = "#aaa";
-                ctx.fillText("No ROMs loaded. Use configuration to load.", 2, 10);
-            }
-        }
-    }
 
     stop() {
         this.break = true;
@@ -187,7 +159,7 @@ export class Vic20 {
             if (this.infoEvent)
                 this.infoEvent(
                     {
-                        mode: this.isPal ? "PAL" : "NTSC",
+                        mode: this.videoRegion,
                         targetFramesPerSecond: this.targetFramesPerSecond,
                         actualFramesPerSecond: Math.round(this.actualFramesPerSecond),
                         speed: this.speed
@@ -200,29 +172,29 @@ export class Vic20 {
         }
     }
 
-    public cartridges(): RomIndexInfo[] {
-        return this.roms.cartridges();
-    }
-
-    public loadCartByName(name: string): void {
+    /**
+     * Loads a cart by its name. Returns the reset address if not auto-start.
+     * @param name 
+     */
+    public loadCartByName(name: string): number | undefined {
         let cart = this.roms.cartridges().find(c => c.name === name);
         if (cart) {
-            this.loadCart(cart.data);
+            return this.loadCart(cart.data);
         }
     }
 
-    public loadCart(data: Uint8Array) {
+    public loadCart(data: Uint8Array): number | undefined {
         // first 2 bytes  are the loading address
         let loadAddress = data[0] + (data[1] << 8);
         data = data.slice(2);   // remove first 2 bytes
         let endLocation = loadAddress + data.length;
         if (loadAddress == 0xA000) {
-            // cart is autoload type
+            // cart is autoload type - don't need start address for reset
+            // reset will automatically check A000
             this.Memory.loadData(data, loadAddress);
-            this.reset();
+            return
         } else {
             // not autoload
-
             var bootStrap = [
                 0x20,
                 0x33,
@@ -259,41 +231,63 @@ export class Vic20 {
                 startAddress = 320;
             }
             this.Memory.loadData(data, loadAddress);
-            this.Cpu.reset(startAddress);
+            return startAddress;
         }
     }
 
     /**
      * Resets the machine
      */
-    public reset(): void {
-        alert('vic20.reset');
-        console.log("Vic20 reset");
+    public reset(pc?: number): void {
+        console.log("Checking ROMs...");
+        if (this.roms.isValid()) {
 
-        let romChar = this.roms.roms().find(r => r.fileType == RomFileType.character && r.region == RomRegion.default);
-        if (!romChar) {
-            throw Error("Missing char ROM.");
+            console.log("ROMs OK.");
+            console.log("Starting Vic20 reset...");
+
+            let romChar = this.roms.roms().find(r => r.fileType == RomFileType.character && r.region == RomRegion.default);
+            if (!romChar) {
+                throw Error("Missing char ROM.");
+            }
+            this.Memory.loadData(romChar.data, 0x8000);
+            console.log("Loaded char ROM at 0x8000.");
+
+            let romBasic = this.roms.roms().find(r => r.fileType == RomFileType.basic && r.region == RomRegion.default);
+            if (!romBasic) {
+                throw Error("Missing BASIC ROM.");
+            }
+            this.Memory.loadData(romBasic.data, 0xC000);
+            console.log("Loaded BASIC ROM at 0xC000.");
+
+            let romKernal = this.roms.roms().find(r => r.fileType == RomFileType.kernal && r.region === ((this.videoRegion === VideoRegion.pal) ? RomRegion.pal : RomRegion.ntsc));
+            if (!romKernal) {
+                throw Error("Missing kernal ROM.");
+            }
+            this.Memory.loadData(romKernal.data, 0xE000);
+            console.log("Loaded kernal ROM at 0xE000.");
+
+            // Reset all components
+            this.via1.reset();
+            this.via2.reset();
+
+            if (pc) {
+                this.Cpu.reset(pc);
+            } else {
+                this.Cpu.reset();
+            }
+
+            // Start timer
+            this.timeoutId = window.setTimeout(() => this.frameRepeat(), this.frameDelay);
+        } else {
+            // Update canvas
+            let ctx: CanvasRenderingContext2D | null = this.canvas.getContext("2d");
+            if (ctx) {
+                ctx.font = "8px Arial";
+                ctx.strokeStyle = "#aaa";
+                ctx.fillStyle = "#aaa";
+                ctx.fillText("No ROMs loaded. Use configuration to load.", 2, 10);
+            }
         }
-        this.Memory.loadData(romChar.data, 0x8000);
-        console.log("Loaded char ROM at 0x8000");
-
-        let romBasic = this.roms.roms().find(r => r.fileType == RomFileType.basic && r.region == RomRegion.default);
-        if (!romBasic) {
-            throw Error("Missing BASIC ROM.");
-        }
-        this.Memory.loadData(romBasic.data, 0xC000);
-        console.log("Loaded BASIC ROM at 0xC000");
-
-        let romKernal = this.roms.roms().find(r => r.fileType == RomFileType.kernal && r.region === (this.isPal ? RomRegion.pal : RomRegion.ntsc));
-        if (!romKernal) {
-            throw Error("Missing kernal ROM.");
-        }
-        this.Memory.loadData(romKernal.data, 0xE000);
-        console.log("Loaded kernal ROM at 0xE000");
-
-        this.via1.reset();
-        this.via2.reset();
-        this.Cpu.reset();
     }
 
     private lastNmi: boolean = false;

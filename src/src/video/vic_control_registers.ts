@@ -1,6 +1,7 @@
 import { ControlRegisterEnum } from "./control_register_enum"
 import Utils from "../lib/utils"
 import Memory from "../memory/memory";
+import { VideoRegion } from "./video_region";
 
 /**
  * 9000 ABBBBBBB
@@ -112,8 +113,8 @@ export class VicControlRegisters {
      * Returns default control register values for PAL
      * @returns 
      */
-    DefaultRegisterValuesPal(isPal: boolean) {
-        if (isPal)
+    DefaultRegisterValuesPal(videoRegion: VideoRegion) {
+        if (videoRegion === VideoRegion.pal)
             return [
                 12, 38, 150, 174, 73, 240, 0, 0, 255, 255, 0, 0, 0, 0, 0, 27,
             ]; else
@@ -122,12 +123,12 @@ export class VicControlRegisters {
             ]
     }
 
-    constructor(isPal: boolean = true) {
+    constructor(videoRegion: VideoRegion = VideoRegion.pal) {
         // Initialise control registers
         for (var i = 0; i < 16; i++) {
             this.write(
                 i,
-                this.DefaultRegisterValuesPal(isPal)[i]
+                this.DefaultRegisterValuesPal(videoRegion)[i]
             );
         }
         console.log(this);

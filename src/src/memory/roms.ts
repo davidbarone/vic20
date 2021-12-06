@@ -29,6 +29,14 @@ export default class Roms {
         return this._roms;
     }
 
+    /**
+     * Gets a single rom info by name
+     * @param name 
+     */
+    public rom(name: string): RomIndexInfo | undefined {
+        return this._roms.find(r => r.name.toLowerCase() === name.toLowerCase());
+    }
+
     public cartridges(): RomIndexInfo[] {
         return this._roms.filter(r => r.fileType === RomFileType.cartridge);
     }
@@ -67,7 +75,7 @@ export default class Roms {
                     }
                 }
 
-                results.sort((a, b) => b.name > a.name ? 1 : -1);
+                results.sort((a, b) => a.name > b.name ? 1 : -1);
 
                 // finally, before returning, check minimum files present
                 if (

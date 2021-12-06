@@ -1,12 +1,13 @@
 import Memory from "../memory/memory";
 import { VicControlRegisters } from "./vic_control_registers"
 import Utils from "../lib/utils"
+import { VideoRegion } from "./video_region";
 
 export class Vic6560 {
 
     // Base address
     private base: number = 0;
-    private isPal: boolean = false;
+    private videoRegion: VideoRegion;
 
     Memory: Memory;
     canvas: HTMLCanvasElement;          // the displayed canvas
@@ -80,13 +81,12 @@ export class Vic6560 {
         0xffe0ffff, // light yellow
     ];
 
-    constructor(isPal: boolean, memory: Memory, canvas: HTMLCanvasElement, offset: number) {
+    constructor(videoRegion: VideoRegion, memory: Memory, canvas: HTMLCanvasElement, offset: number) {
 
         this.base = offset;
-        this.vicControlRegisters = new VicControlRegisters(isPal);
-        this.isPal = isPal;
-
+        this.vicControlRegisters = new VicControlRegisters(videoRegion);
         this.Memory = memory;
+        this.videoRegion = videoRegion;
 
         let that = this;
 
@@ -95,7 +95,7 @@ export class Vic6560 {
             that.Memory.writeFunc[that.base + i] = (offset: number, value: number) => { that.vicControlRegisters.write(offset - that.base, value); }
         }
 
-        if (isPal) {
+        if (videoRegion === VideoRegion.pal) {
             this.CyclesPerLine = 71;
             this.HorizontalBlankCycles = 15
             this.BlankLeftCycles = 8;
@@ -152,7 +152,7 @@ export class Vic6560 {
      * Returns the bus frequency
      */
     public get busFrequency() {
-        if (this.isPal) {
+        if (this.videoRegion === VideoRegion.pal) {
             return 1108404;
         } else {
             return 1022727;
