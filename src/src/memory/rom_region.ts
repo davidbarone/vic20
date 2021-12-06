@@ -18,7 +18,7 @@ export enum RomRegion {
     /**
      * Japan region (NTSC)
      */
-    japan = 'cartridge',
+    japan = 'japan',
 
     /**
      * Denmark region (PAL?)
