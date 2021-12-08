@@ -293,6 +293,21 @@ export class Vic20 {
     private lastNmi: boolean = false;
 
     /**
+     * Sends keystrokes to the Vic20.
+     * 0x0277-0x0280: 10 byte keyboard buffer
+     * 0x00C6: number of keys in the buffer
+     * @param keys 
+     */
+    public sendKeys(keys: string): void {
+
+        var keyboardBufferAddress = 0x277;
+        for (var i = 0; i < keys.length; i++) {
+            this.Memory.writeByte(keyboardBufferAddress + i, keys.charCodeAt(i));
+        }
+        this.Memory.writeByte(0xc6, keys.length);
+    }
+
+    /**
      * Single computer cycle
      */
     cycle() {

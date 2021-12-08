@@ -296,18 +296,20 @@
             }
           };
 
-          // Load cart?
-          let resetAddress = undefined;
-          if (selectedCart) {
-            resetAddress = computer.loadCartByName(selectedCart);
-          }
+          computer.reset();
 
-          // Start computer
-          debugger;
-          if (resetAddress) {
-            computer.reset(resetAddress);
-          } else {
-            computer.reset();
+          // Load cart?
+          // Reset computer - if resetAddress specified, do normal reset first, to allow operating system to start
+          if (selectedCart) {
+            setTimeout(() => {
+              let resetAddress = undefined;
+              resetAddress = computer.loadCartByName(selectedCart);
+              if (resetAddress) {
+                computer.sendKeys("SYS320\r");
+              } else {
+                computer.reset();
+              }
+            }, 2000); // allow 2 seconds.
           }
         });
       }
@@ -487,9 +489,9 @@
             debugger;
             let resetAddress = computer.loadCart(data);
             if (resetAddress) {
-              computer.reset(resetAddress);
+              computer.sendKeys("SYS320\r");
             } else {
-              computer.reset(resetAddress);
+              computer.reset();
             }
           };
           reader.onerror = function (e) {
