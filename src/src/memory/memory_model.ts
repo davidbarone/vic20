@@ -31,6 +31,11 @@ export enum MemoryModel {
     expanded_32k = "expanded_32k",
 
     /**
+     * Expanded (35K - BLK0 RAM1,2,3 AND BLK1,2,3,5)
+     */
+    expanded_35k = "expanded_35k",
+
+    /**
      * All memory available - used for testing
      */
     test = "test"

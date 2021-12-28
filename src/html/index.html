@@ -53,18 +53,6 @@
         content: ":";
       }
 
-      .arrow {
-        border: solid yellow;
-        border-width: 0px 4px 4px 0px;
-        display: inline-block;
-        padding: 3px;
-        background: #222;
-        width: 12px;
-        height: 12px;
-        border-radius: 2px;
-        cursor: pointer;
-      }
-
       .right {
         transform: rotate(-45deg);
         -webkit-transform: rotate(-45deg);
@@ -73,16 +61,6 @@
       .left {
         transform: rotate(135deg);
         -webkit-transform: rotate(135deg);
-      }
-
-      .up {
-        transform: rotate(-135deg);
-        -webkit-transform: rotate(-135deg);
-      }
-
-      .down {
-        transform: rotate(45deg);
-        -webkit-transform: rotate(45deg);
       }
     </style>
   </head>
@@ -96,7 +74,7 @@
 
     <div class="configure-container">
       <label class="configure">Configure</label>
-      <input type="button" class="arrow down" id="configure" />
+      <a id="configure" href="" value="show">show</a>
     </div>
 
     <fieldset id="configure-panel">
@@ -116,6 +94,7 @@
         <option name="Expanded16K" value="expanded_16k">Expanded 16K</option>
         <option name="Expanded24K" value="expanded_24k">Expanded 24K</option>
         <option name="Expanded32K" value="expanded_32k">Expanded 32K</option>
+        <option name="Expanded35K" value="expanded_35k">Expanded 35K</option>
       </select>
       <select name="model" id="model">
         <option name="pal" value="pal">PAL</option>
@@ -320,15 +299,14 @@
         document.querySelector("#configure").onclick = (e) => {
           let elConfigureButton = document.querySelector("#configure");
           let elConfigurePanel = document.querySelector("#configure-panel");
-          if (elConfigureButton.classList.contains("down")) {
+          if (elConfigureButton.innerText == "show") {
+            elConfigureButton.innerText = "hide";
             elConfigurePanel.style.display = "block";
-            elConfigureButton.classList.add("up");
-            elConfigureButton.classList.remove("down");
           } else {
+            elConfigureButton.innerText = "show";
             elConfigurePanel.style.display = "none";
-            elConfigureButton.classList.add("down");
-            elConfigureButton.classList.remove("up");
           }
+          return false;
         };
 
         // Reset handler
