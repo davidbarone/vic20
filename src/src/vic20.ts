@@ -235,7 +235,6 @@ export class Vic20 {
      * Resets the machine
      */
     public reset(): void {
-
         clearInterval(this.timeoutId);
         this.Memory = new Memory(this.expansion);
         this.Cpu = new cpu6502(this.Memory);
@@ -246,11 +245,8 @@ export class Vic20 {
         this.joystick = new joystick(this.via1, this.via2);
         this.via1.setDebug(false);
         this.via2.setDebug(false);
-        this.frameDelay = 20;            // PAL = 50Hz, NTSC = 60Hz, so set default delay to 20/1000 seconds
         this.startTime = new Date().getTime();    // milliseconds after epoch
         this.c = 0;
-        this.speed = 80;
-        this.autoSpeed = false;
 
         console.log("Checking ROMs...");
 

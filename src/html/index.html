@@ -469,9 +469,7 @@
           reader.onload = function (e) {
             // binary data
             let data = new Uint8Array(e.target.result);
-
             let loadAddress = data[0] + (data[1] << 8);
-            alert(loadAddress);
             data = data.slice(2); // remove first 2 bytes
             computer.manualloadCart(data, loadAddress);
             if (loadAddress !== 0xa000) {
