@@ -16,6 +16,8 @@ import { VideoRegion } from "./video/video_region"
 export class Vic20 {
 
     canvas: HTMLCanvasElement;
+    expansion: MemoryModel;
+    videoRegion: VideoRegion;
     Memory: Memory;
     Cpu: cpu6502;
     Vic6560: Vic6560;
@@ -29,8 +31,8 @@ export class Vic20 {
     speed: number;          // speed configuration
     autoSpeed: boolean;
     break: boolean = false;         // set to true to stop execution (breakpoint)
-    videoRegion: VideoRegion;
-    roms: Roms;
+    roms: Roms | undefined;
+    cartridgeName: string = "";
 
     private debug: boolean = false;
     private timeoutId: number = 0;          // controls running / stopping of frames
@@ -39,6 +41,22 @@ export class Vic20 {
     setDebug(mode: boolean) {
         this.debug = mode;
         this.Cpu.setDebug(mode);
+    }
+
+    setConfigMemory(expansion: MemoryModel = MemoryModel.unexpanded) {
+        this.expansion = expansion;
+    }
+
+    setConfigVideo(videoRegion: VideoRegion = VideoRegion.pal) {
+        this.videoRegion = videoRegion;
+    }
+
+    setConfigRoms(roms: Roms) {
+        this.roms = roms;
+    }
+
+    setCartridgeName(name: string) {
+        this.cartridgeName = name;
     }
 
     /**
@@ -55,12 +73,14 @@ export class Vic20 {
         instructionMemory: () => number | null
     }): void
 
-    constructor(canvas: HTMLCanvasElement, expansion: MemoryModel = MemoryModel.unexpanded, videoRegion: VideoRegion = VideoRegion.pal, roms: Roms) {
+    constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
-        this.Memory = new Memory(expansion);
+        this.expansion = MemoryModel.unexpanded;
+        this.videoRegion = VideoRegion.ntsc;
+
+        this.Memory = new Memory(this.expansion);
         this.Cpu = new cpu6502(this.Memory);
-        debugger;
-        this.Vic6560 = new Vic6560(videoRegion, this.Memory, canvas, 0x9000);
+        this.Vic6560 = new Vic6560(this.videoRegion, this.Memory, this.canvas, 0x9000);
         this.via1 = new via6522("VIA1", this.Memory, 0x9110);   // nmi
         this.via2 = new via6522("VIA2", this.Memory, 0x9120);   // irq
         this.keyboard = new keyboard(this.via2);
@@ -72,8 +92,6 @@ export class Vic20 {
         this.c = 0;
         this.speed = 80;
         this.autoSpeed = false;
-        this.videoRegion = videoRegion;
-        this.roms = roms;
     }
 
     /**
@@ -172,75 +190,71 @@ export class Vic20 {
         }
     }
 
-    /**
-     * Loads a cart by its name. Returns the reset address if not auto-start.
-     * @param name 
-     */
-    public loadCartByName(name: string): number | undefined {
-        let cart = this.roms.cartridges().find(c => c.name === name);
-        if (cart) {
-            return this.loadCart(cart.data);
-        }
-    }
-
-    public loadCart(data: Uint8Array): number | undefined {
+    public manualloadCart(data: Uint8Array, loadAddress: number): void {
         // first 2 bytes  are the loading address
-        let loadAddress = data[0] + (data[1] << 8);
-        data = data.slice(2);   // remove first 2 bytes
         let endLocation = loadAddress + data.length;
-        if (loadAddress == 0xA000) {
-            // cart is autoload type - don't need start address for reset
-            // reset will automatically check A000
-            this.Memory.loadData(data, loadAddress);
-            return
+        var bootStrap = [
+            0x20,
+            0x33,
+            0xc5,
+            0xa9,
+            endLocation & 0xff,
+            0x85,
+            45,
+            0xa9,
+            endLocation >> 8,
+            0x85,
+            46,
+            0x20,
+            0x59,
+            0xc6,
+            0x4c,
+            0xae,
+            0xc7,
+            0x60,
+        ];
+
+        let startAddress: number = 320;
+
+        for (var i = 0; i < bootStrap.length; i++) this.Memory.writeByte(320 + i, bootStrap[i]);
+        if (
+            data[8] == 0x41 &&
+            data[9] == 0x30 &&
+            data[10] == 0xc3 &&
+            data[11] == 0xc2 &&
+            data[12] == 0xcd
+        ) {
+            startAddress = 64802;
         } else {
-            // not autoload
-            var bootStrap = [
-                0x20,
-                0x33,
-                0xc5,
-                0xa9,
-                endLocation & 0xff,
-                0x85,
-                45,
-                0xa9,
-                endLocation >> 8,
-                0x85,
-                46,
-                0x20,
-                0x59,
-                0xc6,
-                0x4c,
-                0xae,
-                0xc7,
-                0x60,
-            ];
-
-            let startAddress: number = 320;
-
-            for (var i = 0; i < bootStrap.length; i++) this.Memory.writeByte(320 + i, bootStrap[i]);
-            if (
-                data[8] == 0x41 &&
-                data[9] == 0x30 &&
-                data[10] == 0xc3 &&
-                data[11] == 0xc2 &&
-                data[12] == 0xcd
-            ) {
-                startAddress = 64802;
-            } else {
-                startAddress = 320;
-            }
             this.Memory.loadData(data, loadAddress);
-            return startAddress;
+            this.sendKeys("SYS320\r");
         }
     }
 
     /**
      * Resets the machine
      */
-    public reset(pc?: number): void {
+    public reset(): void {
+
+        clearInterval(this.timeoutId);
+        this.Memory = new Memory(this.expansion);
+        this.Cpu = new cpu6502(this.Memory);
+        this.Vic6560 = new Vic6560(this.videoRegion, this.Memory, this.canvas, 0x9000);
+        this.via1 = new via6522("VIA1", this.Memory, 0x9110);   // nmi
+        this.via2 = new via6522("VIA2", this.Memory, 0x9120);   // irq
+        this.keyboard = new keyboard(this.via2);
+        this.joystick = new joystick(this.via1, this.via2);
+        this.via1.setDebug(false);
+        this.via2.setDebug(false);
+        this.frameDelay = 20;            // PAL = 50Hz, NTSC = 60Hz, so set default delay to 20/1000 seconds
+        this.startTime = new Date().getTime();    // milliseconds after epoch
+        this.c = 0;
+        this.speed = 80;
+        this.autoSpeed = false;
+
         console.log("Checking ROMs...");
-        if (this.roms.isValid()) {
+
+        if (this.roms && this.roms.isValid()) {
 
             console.log("ROMs OK.");
             console.log("Starting Vic20 reset...");
@@ -266,15 +280,27 @@ export class Vic20 {
             this.Memory.loadData(romKernal.data, 0xE000);
             console.log("Loaded kernal ROM at 0xE000.");
 
+            if (this.cartridgeName) {
+                let cart = this.roms.cartridges().find(c => c.name === this.cartridgeName);
+                if (cart) {
+                    let unpackedCart = this.roms.unpack(cart);
+                    if (this.roms.isAutoLoad(unpackedCart)) {
+                        // cart is autoload type - don't need start address for reset
+                        // reset will automatically check A000
+                        this.Memory.loadData(unpackedCart.data, unpackedCart.loadAddress);
+                    } else {
+                        // manual load
+                        setTimeout(() => {
+                            this.manualloadCart(unpackedCart.data, unpackedCart.loadAddress);
+                        }, 5000);
+                    }
+                }
+            }
+
             // Reset all components
             this.via1.reset();
             this.via2.reset();
-
-            if (pc) {
-                this.Cpu.reset(pc);
-            } else {
-                this.Cpu.reset();
-            }
+            this.Cpu.reset();
 
             // Start timer
             this.timeoutId = window.setTimeout(() => this.frameRepeat(), this.frameDelay);

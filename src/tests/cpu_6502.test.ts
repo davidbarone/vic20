@@ -1,6 +1,7 @@
 import cpu6502 from "../src/cpu/cpu6502";
 import Memory from "../src/memory/Memory";
 import Utils from "../src/lib/utils";
+import { MemoryModel } from "../src/memory/memory_model";
 
 /**
  * cpu6502.test.ts
@@ -36,7 +37,7 @@ describe("cpu 6502 tests", () => {
      * Takes around 1.5hrs to complete.
      */
     test("functional tests", () => {
-        let memory = new Memory("test");
+        let memory = new Memory(MemoryModel.test);
         let cpu = new cpu6502(memory);
         let rom = Utils.UInt8ArrayFromBase64(functionalTest6502);
         cpu.load(0x000A, rom);

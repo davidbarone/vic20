@@ -6,6 +6,7 @@ import { RomFileType } from "./rom_file_type";
 import RomIndexInfo from "./rom_index_info";
 import { RomRegion } from "./rom_region";
 import jsZip from "jszip";
+import RomStruct from "./rom_struct";
 
 export default class Roms {
 
@@ -39,6 +40,19 @@ export default class Roms {
 
     public cartridges(): RomIndexInfo[] {
         return this._roms.filter(r => r.fileType === RomFileType.cartridge);
+    }
+
+    public unpack(rom: RomIndexInfo): RomStruct {
+        let loadAddress = rom.data[0] + (rom.data[1] << 8);
+        let data = rom.data.slice(2);   // remove first 2 bytes    
+        return {
+            loadAddress: loadAddress,
+            data: data
+        };
+    }
+
+    public isAutoLoad(unpacked: RomStruct): boolean {
+        return unpacked.loadAddress === 0xA000;
     }
 
     public async validate(): Promise<boolean> {

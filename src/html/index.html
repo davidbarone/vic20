@@ -174,7 +174,7 @@
 
     <script>
       // Globals
-      let computer = null; // Vic20
+      let computer = null;
       let lastInfo = null; // to display debug info
       let breakpointsAddress = []; // breakpoints
       let breakpointsInstruction = []; // breakpoints
@@ -216,70 +216,71 @@
         });
       }
 
-      // Init
-      function init() {
+      // registerHandlers
+      function registerHandlers() {
+        computer.infoEvent = (info) => {
+          let infoDiv = document.querySelector("#info");
+          let elSpeed = document.querySelector("#speed");
+
+          infoDiv.innerText = `${info.actualFramesPerSecond} fps (${(
+            (100 * info.actualFramesPerSecond) /
+            info.targetFramesPerSecond
+          ).toFixed(0)}%)`;
+
+          elSpeed.value = info.speed;
+        };
+
+        computer.debugHandler = (info) => {
+          lastInfo = info;
+          displayDebug(lastInfo);
+
+          // reached a breakpoint?
+          if (
+            breakpointsAddress.length > 0 &&
+            breakpointsAddress.includes(info.pc())
+          ) {
+            this.toggleDebugButtons(false);
+            computer.stop();
+          }
+          if (
+            breakpointsInstruction.length > 0 &&
+            breakpointsInstruction.includes(info.instruction().instruction)
+          ) {
+            this.toggleDebugButtons(false);
+            computer.stop();
+          }
+          if (
+            breakpointsMemory.length > 0 &&
+            breakpointsMemory.includes(info.instructionMemory())
+          ) {
+            this.toggleDebugButtons(false);
+            computer.stop();
+          }
+        };
+      }
+
+      // reset
+      function reset() {
         let elExpansion = document.querySelector("#expansion");
         let elModel = document.querySelector("#model");
         let zipRoms = getRoms();
 
         let expansion = elExpansion.value;
         let model = elModel.value;
-        let canvas = document.getElementById("screen");
         let selectedCart = document.getElementById("select-cart").value;
 
         zipRoms.validate().then((isValid) => {
-          if (computer != null) {
-            computer.stop();
-          }
-          computer = new window.vic20(canvas, expansion, model, zipRoms);
+          computer.setConfigMemory(expansion);
+          computer.setConfigVideo(model);
+          computer.setConfigRoms(zipRoms);
+          computer.setCartridgeName(selectedCart);
 
           setSpeed();
-
-          computer.infoEvent = (info) => {
-            let infoDiv = document.querySelector("#info");
-            let elSpeed = document.querySelector("#speed");
-
-            infoDiv.innerText = `${info.actualFramesPerSecond} fps (${(
-              (100 * info.actualFramesPerSecond) /
-              info.targetFramesPerSecond
-            ).toFixed(0)}%)`;
-
-            elSpeed.value = info.speed;
-          };
-
-          computer.debugHandler = (info) => {
-            lastInfo = info;
-            displayDebug(lastInfo);
-
-            // reached a breakpoint?
-            if (
-              breakpointsAddress.length > 0 &&
-              breakpointsAddress.includes(info.pc())
-            ) {
-              this.toggleDebugButtons(false);
-              computer.stop();
-            }
-            if (
-              breakpointsInstruction.length > 0 &&
-              breakpointsInstruction.includes(info.instruction().instruction)
-            ) {
-              this.toggleDebugButtons(false);
-              computer.stop();
-            }
-            if (
-              breakpointsMemory.length > 0 &&
-              breakpointsMemory.includes(info.instructionMemory())
-            ) {
-              this.toggleDebugButtons(false);
-              computer.stop();
-            }
-          };
-
           computer.reset();
 
           // Load cart?
           // Reset computer - if resetAddress specified, do normal reset first, to allow operating system to start
-          if (selectedCart) {
+          if (false /*selectedCart*/) {
             setTimeout(() => {
               let resetAddress = undefined;
               resetAddress = computer.loadCartByName(selectedCart);
@@ -295,7 +296,6 @@
 
       // Bootstrap code
       function ready(fn) {
-        // Configure handler
         document.querySelector("#configure").onclick = (e) => {
           let elConfigureButton = document.querySelector("#configure");
           let elConfigurePanel = document.querySelector("#configure-panel");
@@ -311,7 +311,7 @@
 
         // Reset handler
         document.querySelector("#reset").onclick = (e) => {
-          init();
+          reset();
         };
         // Stop handler
         document.querySelector("#stop").onclick = (e) => {
@@ -426,7 +426,12 @@
 
       ready(() => {
         // Bootstrap the vic 20
-        init();
+
+        let canvas = document.getElementById("screen");
+        computer = new window.vic20(canvas);
+        registerHandlers(); // register event handlers
+
+        //reset();
 
         // Speed Change
         document.querySelector("#speed").onchange = (e) => {
@@ -464,9 +469,12 @@
           reader.onload = function (e) {
             // binary data
             let data = new Uint8Array(e.target.result);
-            debugger;
-            let resetAddress = computer.loadCart(data);
-            if (resetAddress) {
+
+            let loadAddress = data[0] + (data[1] << 8);
+            alert(loadAddress);
+            data = data.slice(2); // remove first 2 bytes
+            computer.manualloadCart(data, loadAddress);
+            if (loadAddress !== 0xa000) {
               computer.sendKeys("SYS320\r");
             } else {
               computer.reset();
