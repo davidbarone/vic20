@@ -112,7 +112,7 @@ export default class Memory {
 
         // Set up memory
         for (let i = 0x0000; i <= 0xFFFF; i++) {
-            this.mem[i] = 0x00;
+            this.mem[i] = 0xff;
             this.readFunc[i] = this.readMem;
             this.writeFunc[i] = this.writeMem;
         }
@@ -134,7 +134,9 @@ export default class Memory {
             // Note that RAM must be contiguous for BASIC
             // BLK 5 is generally not accessible
             if (this.expansion === MemoryModel.expanded_3k) for (let i = 0x0400; i <= 0x0FFF; i++) this.writeFunc[i] = this.writeMem;  // RAM1,2,3
+            if (this.expansion === MemoryModel.expanded_11k) for (let i = 0x0400; i <= 0x0FFF; i++) this.writeFunc[i] = this.writeMem;  // RAM1,2,3
             if (this.expansion === MemoryModel.expanded_8k) for (let i = 0x2000; i <= 0x3FFF; i++) this.writeFunc[i] = this.writeMem;  // BLK1
+            if (this.expansion === MemoryModel.expanded_11k) for (let i = 0x2000; i <= 0x3FFF; i++) this.writeFunc[i] = this.writeMem;  // BLK1
             if (this.expansion === MemoryModel.expanded_16k) for (let i = 0x2000; i <= 0x5FFF; i++) this.writeFunc[i] = this.writeMem;  // BLK1,2
             if (this.expansion === MemoryModel.expanded_24k) for (let i = 0x2000; i <= 0x7FFF; i++) this.writeFunc[i] = this.writeMem;  // BLK11,2,3
             if (this.expansion === MemoryModel.expanded_32k) {

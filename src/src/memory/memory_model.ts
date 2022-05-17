@@ -16,6 +16,11 @@ export enum MemoryModel {
     expanded_8k = "expanded_8k",
 
     /**
+     * Expanded (11K - BLK0,1)
+     */
+     expanded_11k = "expanded_11k",
+
+    /**
      * Expanded (16K - BLK1,2)
      */
     expanded_16k = "expanded_16k",

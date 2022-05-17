@@ -5,7 +5,6 @@
     <style>
       html {
         font-family: Arial, Helvetica, sans-serif;
-        background-color: transparent;
         font-size: small;
       }
       body {
@@ -13,18 +12,11 @@
         margin: 0px;
       }
 
-      h1 {
-        color: white;
-        font-weight: 600;
+      a {
+        color: #e0b24d;
       }
 
       .info {
-        font-size: small;
-        color: gray;
-      }
-
-      .configure {
-        color: white;
         font-size: small;
       }
 
@@ -33,34 +25,31 @@
       }
 
       fieldset {
-        background-color: #fff;
+        background: white;
         padding: 4px;
         width: 600px;
         box-sizing: border-box;
-        background: #bbb;
         display: none;
         border: 0px;
-        border-radius: 8px;
+        border-top: 4px solid #e0b24d;
+        border-bottom: 4px solid #e0b24d;
+        margin-top: 4px;
+        margin-bottom:  4px;
       }
 
       label {
+        color: #dddddd;
         font-weight: 600;
         width: 80px;
         display: inline-block;
       }
 
+      fieldset label {
+        color: #1e1e1e;
+      }
+
       label::after {
         content: ":";
-      }
-
-      .right {
-        transform: rotate(-45deg);
-        -webkit-transform: rotate(-45deg);
-      }
-
-      .left {
-        transform: rotate(135deg);
-        -webkit-transform: rotate(135deg);
       }
     </style>
   </head>
@@ -73,7 +62,7 @@
     ></canvas>
 
     <div class="configure-container">
-      <label class="configure">Configure</label>
+      <label>Configure</label>
       <a id="configure" href="" value="show">show</a>
     </div>
 
@@ -91,6 +80,7 @@
         <option name="Unexpanded" value="unexpanded">Unexpanded</option>
         <option name="Expanded3K" value="expanded_3k">Expanded 3K</option>
         <option name="Expanded8K" value="expanded_8k">Expanded 8K</option>
+        <option name="Expanded11K" value="expanded_11k">Expanded 11K</option>
         <option name="Expanded16K" value="expanded_16k">Expanded 16K</option>
         <option name="Expanded24K" value="expanded_24k">Expanded 24K</option>
         <option name="Expanded32K" value="expanded_32k">Expanded 32K</option>
@@ -165,12 +155,8 @@
     </fieldset>
 
     <!-- link to github -->
-    <div style="margin-top: 8px; color: #ccc">
-      Project URL:
-      <a href="https://github.com/davidbarone/vic20" target="_new"
-        >https://github.com/davidbarone/vic20</a
-      >
-    </div>
+    <label>Url</label>
+    <a href="https://github.com/davidbarone/vic20" target="_new">https://github.com/davidbarone/vic20</a>
 
     <script>
       // Globals
