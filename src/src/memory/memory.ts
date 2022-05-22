@@ -112,7 +112,7 @@ export default class Memory {
 
         // Set up memory
         for (let i = 0x0000; i <= 0xFFFF; i++) {
-            this.mem[i] = 0xff;
+            this.mem[i] = 0x00;
             this.readFunc[i] = this.readMem;
             this.writeFunc[i] = this.writeMem;
         }
