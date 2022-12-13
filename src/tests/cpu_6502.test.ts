@@ -1,5 +1,5 @@
-import cpu6502 from "../src/cpu/cpu6502";
-import Memory from "../src/memory/Memory";
+import cpu6502 from "../src/cpu/cpu_6502";
+import Memory from "../src/memory/memory";
 import Utils from "../src/lib/utils";
 import { MemoryModel } from "../src/memory/memory_model";
 

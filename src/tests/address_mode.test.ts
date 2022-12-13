@@ -1,4 +1,4 @@
-import AddressMode from "../src/cpu/AddressMode"
+import AddressMode from "../src/cpu/address_mode"
 
 test('Parse immediate', () => {
     let operand = "#10";
