@@ -136,6 +136,7 @@ The following are still being worked on and are not available yet:
 - Sound
 - Cassette / tape loading and saving
 - Unsupported CPU instructions (as used by some games)
+- Fixing up issues with some of the games
 
 ## Screenshots
 
@@ -148,6 +149,8 @@ The following are still being worked on and are not available yet:
 ![radar_rat_race](https://github.com/davidbarone/vic20/blob/main/images/radar_rat_race.png?raw=true)
 
 ![sargon_2_chess](https://github.com/davidbarone/vic20/blob/main/images/sargon_2_chess.png?raw=true)
+
+![manic_miner](https://github.com/davidbarone/vic20/blob/main/images/manic_miner.png?raw=true)
 
 ![boot](https://github.com/davidbarone/vic20/blob/main/images/boot.png?raw=true)
 

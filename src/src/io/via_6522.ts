@@ -223,8 +223,6 @@ export default class via6522 {
 
         // Trigger T2
         this.T1C--;
-        this.T2C--;
-
 
         if (this.T1C == 0) {
             // Test keyboard
@@ -239,14 +237,17 @@ export default class via6522 {
             if (Utils.ExtractBits(this.ACR, 6, 6) == 1) {
                 this.clearedT1 = true;  // continuous mode
                 this.T1C = this.T1L;
+            } {
+                this.T1C = 0xfffe;
             }
         } else {
             // this.setIfr(6, false);
         }
 
-
+        this.T2C--;
         if (this.T2C == 0) {
             this.setIfr(5, true);
+            this.T2C = 0xfffe;
         }
 
         //this.setCA1Interrupt();

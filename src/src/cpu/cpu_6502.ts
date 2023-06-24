@@ -10,7 +10,7 @@ import CpuDebugInfo from "./cpu_debug_info";
 // ==========
 // Cpu6502.ts
 // ==========
-// 
+//
 // The 6502 has 56 different instructions and 13 addressing modes. There are 151 defined op codes.
 //
 // The 56 instructions are:
@@ -98,7 +98,7 @@ import CpuDebugInfo from "./cpu_debug_info";
 // =============================================================================
 // Addressing Modes (https://www.masswerk.at/6502/6502_instruction_set.html#DEX)
 // =============================================================================
-// 
+//
 // Key   Mode                Example     Description
 // ----- ------------------- ----------- -------------------------------------------------------------
 // A     Accumulator         OPC A       operand is AC (implied single byte instruction)
@@ -114,17 +114,17 @@ import CpuDebugInfo from "./cpu_debug_info";
 // zpg   zeropage            OPC $LL     operand is zeropage address (hi-byte is zero, address = $00LL)
 // zpg,X zeropage, X-indexed OPC $LL,X   operand is zeropage address; effective address is address incremented by X without carry **
 // zpg,Y zeropage, Y-indexed OPC $LL,Y   operand is zeropage address; effective address is address incremented by Y without carry **
-// 
+//
 // *   16-bit address words are little endian, lo(w)-byte first, followed by the hi(gh)-byte.
 // (An assembler will use a human readable, big-endian notation as in $HHLL.)
-// 
+//
 // **  The available 16-bit address space is conceived as consisting of pages of 256 bytes each, with
 // address hi-bytes represententing the page index. An increment with carry may affect the hi-byte
 // and may thus result in a crossing of page boundaries, adding an extra cycle to the execution.
 // Increments without carry do not affect the hi-byte of an address and no page transitions do occur.
 // Generally, increments of 16-bit addresses include a carry, increments of zeropage addresses don't.
 // Notably this is not related in any way to the state of the carry bit of the accumulator.
-// 
+//
 // *** Branch offsets are signed 8-bit values, -128 ... +127, negative offsets in two's complement.
 // Page transitions may occur and add an extra cycle to the exucution.
 // --------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -156,6 +156,7 @@ import CpuDebugInfo from "./cpu_debug_info";
 // http://www.obelisk.me.uk/6502/
 // https://codegolf.stackexchange.com/questions/12844/emulate-a-mos-6502-cpu
 // https://github.com/amensch/e6502
+// https://www.masswerk.at/nowgobang/2021/6502-illegal-opcodes
 //
 // **********************************
 
@@ -341,6 +342,7 @@ export default class cpu6502 extends cpu6502Internal {
       this.lastPc = this.Registers.PC;
 
       let instruction = this.FetchInstruction();
+
       this.currentInstruction = this.opCodes6502[instruction];
 
       if (typeof this.currentInstruction == 'undefined') {
@@ -725,7 +727,9 @@ export default class cpu6502 extends cpu6502Internal {
     new OpCodeGenRule({ opCode: 0xF2, instruction: "JAM", cycles: 2, addressMode: "impl", operation: (cpu, reg) => { throw 'JAM/KIL/HLT encountered!' }, read: false, write: false }),
     new OpCodeGenRule({ opCode: 0xF4, instruction: "NOP", cycles: 4, addressMode: "zpg,X", operation: (cpu, reg) => { }, read: false, write: false }),
     new OpCodeGenRule({ opCode: 0xFA, instruction: "NOP", cycles: 2, addressMode: "impl", operation: (cpu, reg) => { }, read: false, write: false }),
-    new OpCodeGenRule({ opCode: 0xFC, instruction: "NOP", cycles: 4, addressMode: "abs,X", operation: (cpu, reg) => { }, read: false, write: false })
+    new OpCodeGenRule({ opCode: 0xFC, instruction: "NOP", cycles: 4, addressMode: "abs,X", operation: (cpu, reg) => { }, read: false, write: false }),
+    new OpCodeGenRule({ opCode: 0xFC, instruction: "ISC", cycles: 7, addressMode: "abs,X", operation: (cpu, reg) => { let m = cpu.setzn((reg + 1) & 0xFF); cpu.sbc(m); return m; }, read: false, write: false })
+
     /*
         0x03: "SLO X,ind",
         0x07: "SLO zpg",
@@ -792,7 +796,7 @@ export default class cpu6502 extends cpu6502Internal {
         0xF3: "ISB ind,Y",
         0xF7: "ISB zpg,X",
         0xFB: "ISB abs,Y",
-        0xFF: "ISB abs,X"
+        0xFF: "ISC abs,X"
     
         */
   ]
