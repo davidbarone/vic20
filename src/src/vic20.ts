@@ -350,8 +350,8 @@ export class Vic20 {
 
         this.Cpu.cycle();
         this.Vic6560.Cycle();
-        //this.via1.cycleDown();
-        //this.via2.cycleDown();
+        this.via1.cycleDown();
+        this.via2.cycleDown();
 
         if (this.debug && this.debugHandler) {
             this.debugHandler({

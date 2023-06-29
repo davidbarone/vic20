@@ -135,7 +135,7 @@ The following are still being worked on and are not available yet:
 - Cassette / tape loading and saving
 - Unsupported CPU instructions (as used by some games)
 - Fixing up issues with some of the games
-- Timing issues
+- Timing issues with VIA6522
 
 ## Screenshots
 
