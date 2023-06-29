@@ -16,17 +16,6 @@ export class Vic6560 {
     internalContext: CanvasRenderingContext2D | null;
     vicControlRegisters: VicControlRegisters;
 
-    audioCtx: AudioContext;
-    phi2: number;
-    vicBassAudioProcessor: AudioWorkletNode | null = null;
-    vicAltoAudioProcessor: AudioWorkletNode | null = null;
-    vicSopranoAudioProcessor: AudioWorkletNode | null = null;
-    scriptUrl: string = URL.createObjectURL(new Blob([
-        '(',
-        fnVic20Processor.toString(),
-        ')()'
-    ], { type: 'application/javascript' }));
-
     CyclesPerLine: number = 0;
     HorizontalBlankCycles: number = 0;
 
@@ -92,6 +81,19 @@ export class Vic6560 {
         0xffe6d8ad, // light blue
         0xffe0ffff, // light yellow
     ];
+
+    // Sound variables
+
+    audioCtx: AudioContext;
+    phi2: number;
+    vicBassAudioProcessor: AudioWorkletNode | null = null;
+    vicAltoAudioProcessor: AudioWorkletNode | null = null;
+    vicSopranoAudioProcessor: AudioWorkletNode | null = null;
+    scriptUrl: string = URL.createObjectURL(new Blob([
+        '(',
+        fnVic20Processor.toString(),
+        ')()'
+    ], { type: 'application/javascript' }));
 
     constructor(videoRegion: VideoRegion, memory: Memory, canvas: HTMLCanvasElement, offset: number) {
 
@@ -347,25 +349,14 @@ Interlaced Mode:            ${this.vicControlRegisters.InterlacedMode}`
         if (this._cycle % this.CyclesPerLine == 0) {
             this._line++;
             this._rowPixel = 0;
+            this.doSound();
         }
         if (this._cycle == (this.CyclesPerLine * this.LinesPerFrame)) {
             this.drawFrame();
         }
     }
 
-    drawFrame(): void {
-        if (this.internalContext) {
-            this._imageData.data.set(this._buf8);
-            this.internalContext.putImageData(this._imageData, 0, 0);
-
-            if (this.context) {
-                this.context.drawImage(this.internalCanvas, 0, 0);
-            }
-        }
-
-        this._cycle = 0;
-        this._rowPixel = 0;
-
+    doSound() {
         // Sound
         if (this.vicBassAudioProcessor != null) {
             const freq = this.vicBassAudioProcessor.parameters.get('Frequency')!;
@@ -400,6 +391,21 @@ Interlaced Mode:            ${this.vicControlRegisters.InterlacedMode}`
                 enabled.value = sSoprano;
             }
         }
+    }
+
+    drawFrame(): void {
+        if (this.internalContext) {
+            this._imageData.data.set(this._buf8);
+            this.internalContext.putImageData(this._imageData, 0, 0);
+
+            if (this.context) {
+                this.context.drawImage(this.internalCanvas, 0, 0);
+            }
+        }
+
+        this._cycle = 0;
+        this._rowPixel = 0;
+
     }
 
     isRowBlanking(): boolean {
