@@ -93,11 +93,11 @@ export class VicControlRegisters {
     LightPenY: number = 0;
     PaddleX: number = 0;
     PaddleY: number = 0;
-    BaseSwitch: boolean = false;
+    BassSwitch: boolean = false;
     AltoSwitch: boolean = false;
     SopranoSwitch: boolean = false;
     NoiseSwitch: boolean = false;
-    BaseFrequency: number = 0;
+    BassFrequency: number = 0;
     AltoFrequency: number = 0;
     SopranoFrequency: number = 0;
     NoiseFrequency: number = 0;
@@ -203,8 +203,8 @@ export class VicControlRegisters {
             case ControlRegisterEnum.CR9_POT_Y:
                 this.PaddleY = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR9_POT_Y], 0, 7);
             case ControlRegisterEnum.CRA_F_IN_1:
-                this.BaseSwitch = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRA_F_IN_1], 7, 7) == 1;
-                this.BaseFrequency = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRA_F_IN_1], 0, 6);
+                this.BassSwitch = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRA_F_IN_1], 7, 7) == 1;
+                this.BassFrequency = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRA_F_IN_1], 0, 6);
                 break;
             case ControlRegisterEnum.CRB_F_IN_2:
                 this.AltoSwitch = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRB_F_IN_2], 7, 7) == 1;

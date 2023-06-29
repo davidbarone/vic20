@@ -32,52 +32,17 @@ const fnVic20Processor = function () {
     static get parameterDescriptors() {
       return [
         {
-          name: "frequency",
+          name: "Frequency",
           defaultValue: 440,
           minValue: 0,
           maxValue: 0.5 * sampleRate, // around 22kHz (typical sample rate = 44.1kHz)
           automationRate: "a-rate",
         },
         {
-          name: "bassFrequency",
-          defaultValue: 440,
+          name: "Switch",
+          defaultValue: 0,
           minValue: 0,
-          maxValue: 0.5 * sampleRate, // around 22kHz (typical sample rate = 44.1kHz)
-          automationRate: "a-rate",
-        },
-        {
-          name: "bassEnabled",
-          defaultValue: 1,
-          minValue: 0,
-          maxValue: 0.5 * sampleRate, // around 22kHz (typical sample rate = 44.1kHz)
-          automationRate: "a-rate",
-        },
-        {
-          name: "altoFrequency",
-          defaultValue: 440,
-          minValue: 0,
-          maxValue: 0.5 * sampleRate, // around 22kHz (typical sample rate = 44.1kHz)
-          automationRate: "a-rate",
-        },
-        {
-          name: "altoEnabled",
-          defaultValue: 1,
-          minValue: 0,
-          maxValue: 0.5 * sampleRate, // around 22kHz (typical sample rate = 44.1kHz)
-          automationRate: "a-rate",
-        },
-        {
-          name: "sopranoFrequency",
-          defaultValue: 440,
-          minValue: 0,
-          maxValue: 0.5 * sampleRate, // around 22kHz (typical sample rate = 44.1kHz)
-          automationRate: "a-rate",
-        },
-        {
-          name: "sopranoEnabled",
-          defaultValue: 1,
-          minValue: 0,
-          maxValue: 0.5 * sampleRate, // around 22kHz (typical sample rate = 44.1kHz)
+          maxValue: 1,
           automationRate: "a-rate",
         },
       ];
@@ -101,22 +66,23 @@ const fnVic20Processor = function () {
      * @returns 
      */
     process(inputs, outputs, parameters) {
+      const freqParams = parameters.Frequency;
+      const enabledParams = parameters.Switch;
+
       const output = outputs[0];
-      const freqs = parameters.frequency;
-      //console.log(output.length); // channels
-      output.forEach((channel) => {
-        for (let i = 0; i < channel.length; i++) {
-          //channel[i] = Math.random() * 2 - 1;
-          const freq = freqs.length > 1 ? freqs[i] : freqs[0];
-          const globTime = currentTime + i / sampleRate;
-          this.d += globTime * (this.prevFreq - freq);
-          this.prevFreq = freq;
-          const time = globTime * freq + this.d;
-          const vibrato = 0; // Math.sin(globTime * 2 * Math.PI * 7) * 2
-          //channel[i] = Math.sin(2 * Math.PI * time + vibrato) // sine wave
-          channel[i] = Math.sin(2 * Math.PI * time + vibrato) > 0 ? 1 : -1; // square wave
-        }
-      });
+      const channel = output[0];
+      for (let i = 0; i < channel.length; i++) {
+        //channel[i] = Math.random() * 2 - 1;
+        const freq = freqParams.length > 1 ? freqParams[i] : freqParams[0];
+        const enabled = enabledParams.length > 1 ? enabledParams[i] : enabledParams[0];
+        const globTime = currentTime + i / sampleRate;
+        this.d += globTime * (this.prevFreq - freq);
+        this.prevFreq = freq;
+        const time = globTime * freq + this.d;
+        const vibrato = 0; // Math.sin(globTime * 2 * Math.PI * 7) * 2
+        //channel[i] = Math.sin(2 * Math.PI * time + vibrato) // sine wave
+        channel[i] = enabled ? (Math.sin(2 * Math.PI * time + vibrato) > 0 ? 1 : -1) : 0; // square wave
+      }
       return true;
     }
   }
