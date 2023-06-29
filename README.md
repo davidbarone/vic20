@@ -117,7 +117,7 @@ The following features are available at the moment:
 - MOS6502 emulation (successfully runs https://github.com/Klaus2m5/6502_65C02_functional_tests)
 - Vic6560/6561 emulation
   - PAL/NTSC support
-  - Note: sound not available yet
+  - Sound (bass,alto,soprano channels currently)
 - Via6522 emulation
 - Multiple memory models (unexpanded, 3K, 8K, 16K, 24K, 32K)
 - Debugging
@@ -132,11 +132,10 @@ The following features are available at the moment:
 ## ToDo List
 
 The following are still being worked on and are not available yet:
-
-- Sound
 - Cassette / tape loading and saving
 - Unsupported CPU instructions (as used by some games)
 - Fixing up issues with some of the games
+- Timing issues
 
 ## Screenshots
 
