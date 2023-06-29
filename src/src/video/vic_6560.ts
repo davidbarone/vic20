@@ -2,7 +2,7 @@ import Memory from "../memory/memory";
 import { VicControlRegisters } from "./vic_control_registers"
 import Utils from "../lib/utils"
 import { VideoRegion } from "./video_region";
-
+import { fnVic20Processor } from "./vic_20_audio_processor"
 export class Vic6560 {
 
     // Base address
@@ -15,6 +15,17 @@ export class Vic6560 {
     context: CanvasRenderingContext2D | null;
     internalContext: CanvasRenderingContext2D | null;
     vicControlRegisters: VicControlRegisters;
+
+    audioCtx: AudioContext;
+    bass: AudioWorkletNode | null = null;
+    soprano: AudioWorkletNode | null = null;
+    alto: AudioWorkletNode | null = null;
+    phi2: number;
+    scriptUrl: string = URL.createObjectURL(new Blob([
+        '(',
+        fnVic20Processor.toString(),
+        ')()'
+    ], { type: 'application/javascript' }));
 
     CyclesPerLine: number = 0;
     HorizontalBlankCycles: number = 0;
@@ -31,6 +42,7 @@ export class Vic6560 {
     ScreenHeight: number = 0;
 
     _cycle: number = 0;
+
     _rowCycle: number = 0;
     _line: number = 0;
     _rasterLine: number = 0;
@@ -141,6 +153,34 @@ export class Vic6560 {
             this._buf8 = new Uint8ClampedArray(buf);
             this._data32 = new Uint32Array(buf);
         }
+
+        // Initialise sound
+        this.phi2 = this.videoRegion == VideoRegion.pal ? 4433618 / 4 : 14318181 / 14;
+        const AudioContext = window.AudioContext;
+        this.audioCtx = new AudioContext();
+
+        this.audioCtx.audioWorklet.addModule(this.scriptUrl).then(() => {
+            /*
+            this.bass = new AudioWorkletNode(this.audioCtx, 'vic20-processor', {
+                numberOfOutputs: 1,
+                outputChannelCount: [1]
+            });
+            */
+            this.soprano = new AudioWorkletNode(this.audioCtx, 'vic20-processor', {
+                numberOfOutputs: 1,
+                outputChannelCount: [1]
+            });
+            this.alto = new AudioWorkletNode(this.audioCtx, 'vic20-processor', {
+                numberOfOutputs: 1,
+                outputChannelCount: [1]
+            });
+            var gain = this.audioCtx.createGain();
+            //this.bass.connect(gain);
+            this.soprano.connect(gain);
+            this.alto.connect(gain);
+            gain.connect(this.audioCtx.destination);
+            gain.gain.value = 0.1;
+        });
     }
 
     // Used to calculate speed of emulator
@@ -327,6 +367,24 @@ Interlaced Mode:            ${this.vicControlRegisters.InterlacedMode}`
 
         this._cycle = 0;
         this._rowPixel = 0;
+
+        // Sound
+        if (this.soprano != null) {
+            //const freqBass = this.bass!.parameters.get('frequency')!;
+            const freqAlto = this.alto!.parameters.get('frequency')!;
+            const freqSoprano = this.soprano!.parameters.get('frequency')!;
+            //const time = this.audioCtx.currentTime;
+            //const fBass = this.phi2 / (256 * (127 - this.vicControlRegisters.BaseFrequency));
+            const fAlto = this.phi2 / (128 * (127 - this.vicControlRegisters.AltoFrequency));
+            const fSoprano = this.phi2 / (64 * (127 - this.vicControlRegisters.SopranoFrequency));
+            //console.log(fBass);
+            //console.log(fAlto);
+            console.log(fSoprano);
+            //freqBass.value = fBass;
+            freqAlto.value = fAlto;
+            freqSoprano.value = fSoprano;
+        }
+
     }
 
     isRowBlanking(): boolean {

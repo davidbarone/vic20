@@ -6,9 +6,9 @@
   "scripts": {
     "test": "jest --collectCoverage",
     "wpw": "webpack --watch",
-    "serve": "webpack-dev-server --mode=development",
+    "serve": "set NODE_OPTIONS=--openssl-legacy-provider && webpack-dev-server --mode=development",
     "go": "start npm run wpw && start npm run serve",
-    "build": "webpack --mode production",
+    "build": "set NODE_OPTIONS=--openssl-legacy-provider && webpack --mode production",
     "compile": "tsc"
   },
   "repository": {
@@ -39,6 +39,7 @@
     "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
+    "@types/audioworklet": "^0.0.48",
     "jszip": "^3.7.1"
   }
 }

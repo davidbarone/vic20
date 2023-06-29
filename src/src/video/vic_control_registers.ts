@@ -204,15 +204,15 @@ export class VicControlRegisters {
                 this.PaddleY = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CR9_POT_Y], 0, 7);
             case ControlRegisterEnum.CRA_F_IN_1:
                 this.BaseSwitch = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRA_F_IN_1], 7, 7) == 1;
-                this.BaseFrequency = 0;
+                this.BaseFrequency = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRA_F_IN_1], 0, 6);
                 break;
             case ControlRegisterEnum.CRB_F_IN_2:
                 this.AltoSwitch = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRB_F_IN_2], 7, 7) == 1;
-                this.AltoFrequency = 0;
+                this.AltoFrequency = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRB_F_IN_2], 0, 6);
                 break;
             case ControlRegisterEnum.CRC_F_IN_3:
                 this.SopranoSwitch = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRC_F_IN_3], 7, 7) == 1;
-                this.SopranoFrequency = 0;
+                this.SopranoFrequency = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRC_F_IN_3], 0, 6);
                 break;
             case ControlRegisterEnum.CRD_F_IN_4:
                 this.NoiseSwitch = Utils.ExtractBits(this.ControlRegisters[ControlRegisterEnum.CRD_F_IN_4], 7, 7) == 1;

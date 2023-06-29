@@ -238,7 +238,7 @@ export default class via6522 {
                 this.clearedT1 = true;  // continuous mode
                 this.T1C = this.T1L;
             } {
-                this.T1C = 0xfffe;
+                //this.T1C = 0xfffe;
             }
         } else {
             // this.setIfr(6, false);
@@ -384,6 +384,7 @@ export default class via6522 {
      */
     public read(offset: number): number {
         offset = (offset - this.base) & 0xF;    // must be nibble
+        let rowInput: number;
         switch (offset) {
             case 0x0:
                 var ddrb = this.reg[2];    // 1 = pin is output, 0 = pin is input
@@ -398,7 +399,7 @@ export default class via6522 {
                 var ddra = this.reg[3];
                 this.setIfr(0, false);      // Clear CA2 bit
                 this.setIfr(1, false);      // Clear CA1 bit
-                let rowInput = (this.getPortA ? this.getPortA() : 255) & ~ddra;
+                rowInput = (this.getPortA ? this.getPortA() : 255) & ~ddra;
                 return rowInput;
             case 0x2:
                 return this.reg[0x2];   // DDRB
