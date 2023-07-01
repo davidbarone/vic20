@@ -34,7 +34,7 @@
         border-top: 4px solid #e0b24d;
         border-bottom: 4px solid #e0b24d;
         margin-top: 4px;
-        margin-bottom:  4px;
+        margin-bottom: 4px;
       }
 
       label {
@@ -156,7 +156,9 @@
 
     <!-- link to github -->
     <label>Url</label>
-    <a href="https://github.com/davidbarone/vic20" target="_new">https://github.com/davidbarone/vic20</a>
+    <a href="https://github.com/davidbarone/vic20" target="_new"
+      >https://github.com/davidbarone/vic20</a
+    >
 
     <script>
       // Globals
@@ -395,6 +397,11 @@
           case "vic":
             elDebugInfo.value = info.vic();
             break;
+          case "via1":
+            elDebugInfo.value = info.via1(1);
+            break;
+          case "via2":
+            elDebugInfo.value = info.via2(1);
         }
       };
 
