@@ -251,21 +251,21 @@ export default class via6522 {
             this.clearedT1 = false;
 
             // if set to continuous interrupts, set clearedT1 = true
-            if (Utils.ExtractBits(this.ACR, 6, 6) == 1) {
+            if (Utils.ExtractBits(this.getReg(Via6522RegisterEnum.RB_ACR), 6, 6) == 1) {
                 this.clearedT1 = true;  // continuous mode
                 const t1l = this.getReg(Via6522RegisterEnum.R6_T1L_L) + (this.getReg(Via6522RegisterEnum.R7_T1L_H) << 8)
                 // copy latch->counter
                 this.setTimer(1, t1l);
-            } {
+            } else {
                 //this.setTimer(1, 0xffff);
             }
         } else {
-            //this.setIfr(Via6522InterruptFlagRegisterEnum.R6_T1, false);
+            this.setIfr(Via6522InterruptFlagRegisterEnum.R6_T1, false);
         }
 
         if (this.getTimer(2) == 0) {
             this.setIfr(Via6522InterruptFlagRegisterEnum.R5_T2, true);
-            //this.setTimer(2, 0xffff);
+            this.setTimer(2, 0xffff);
         }
 
         //this.setCA1Interrupt();
