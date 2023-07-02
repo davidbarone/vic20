@@ -41,6 +41,8 @@ export class Vic20 {
     setDebug(mode: boolean) {
         this.debug = mode;
         this.Cpu.setDebug(mode);
+        this.via1.setDebug(mode);
+        this.via2.setDebug(mode);
     }
 
     setConfigMemory(expansion: MemoryModel = MemoryModel.unexpanded) {
@@ -69,6 +71,8 @@ export class Vic20 {
         stack: () => string,
         vic: () => string,
         pc: () => number,
+        via1: (history: number) => string,
+        via2: (history: number) => string,
         instruction: () => OpCodeGenRule,
         instructionMemory: () => number | null
     }): void
@@ -359,6 +363,8 @@ export class Vic20 {
                 cpu: this.Cpu.getDebug.bind(this.Cpu),
                 stack: this.Cpu.getCallStack.bind(this.Cpu),
                 vic: this.Vic6560.getDebug.bind(this.Vic6560),
+                via1: this.via1.getDebug.bind(this.via1),
+                via2: this.via2.getDebug.bind(this.via2),
                 pc: this.Cpu.getPC.bind(this.Cpu),
                 instruction: this.Cpu.getInstruction.bind(this.Cpu),
                 instructionMemory: this.Cpu.getInstructionMemory.bind(this.Cpu)
