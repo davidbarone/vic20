@@ -6,8 +6,7 @@
  * - 2 16-bit timers
  * - One 8-bit shift register for serial communications
  *
- * Pin Configuration
- * - 40 pins
+ * Pin Configuration - VIA6522 has 40 pins (underscore = pull down to activate):
  * - 1: Vss (system logic ground voltage)
  * - 2-9: PA0-7
  * - 10-17: PB0-7
@@ -21,14 +20,11 @@
  * - 25: phi02 (input clock phase 2). Controls all transfers between R6522 and microprocessor
  * - 26-33: D7-0
  * - 34: _RES_ (clears all internal registers) 
- * - 35-38: RS3-0
+ * - 35-38: RS3-0 (register selector)
  * - 39: CA2
  * - 40: CA1
  *  
  * The Vic20 contained 2 via6522 chips (VIA1 and VIA2)
- * 
- * 
- * 
  * 
  * Auxilliary Control Register (ACNTRL)
  * ------------------------------------
@@ -393,6 +389,46 @@ export default class via6522 {
         }
     }
 
+    private getAcrStatus(ACR: number): string {
+        ACR = ACR & 0xff;
+        var pa = Utils.ExtractBits(ACR, 0, 0);
+        var pb = Utils.ExtractBits(ACR, 1, 1);
+        var sr = Utils.ExtractBits(ACR, 2, 4);
+        var t2 = Utils.ExtractBits(ACR, 5, 5);
+        var t1 = Utils.ExtractBits(ACR, 6, 7);
+
+        const latchingStatuses: string[] = [
+            'off',
+            'on'
+        ]
+
+        const SRStatuses: string[] = [
+            'Disabled',
+            'S/in T2',
+            'S/in phi02',
+            'S/in ext clk',
+            'S/out F/run T2',
+            'S/out T2',
+            'S/out phi02',
+            'S/out ext clk'
+        ]
+
+        const T2Statuses: string[] = [
+            'Timed',
+            'Pulse PB6'
+        ]
+
+        const T1Statuses: string[] = [
+            'Timed (PB7 off)',
+            'Cont. (PB7 off)',
+            'Timed (PB7 1-shot)',
+            'Cont. (PB7 s/wave)'
+        ]
+
+        return `T1:[${T1Statuses[t1]}] T2:[${T2Statuses[t2]}] SR:[${SRStatuses[sr]}] PA:[${latchingStatuses[pa]}] PB:[${latchingStatuses[pb]}]`
+    }
+
+
     /**
       * Gets last n instructions executed
       * @param history Number of instructions, n, to keep in history. Can be between 1 and historyMaxSize
@@ -412,11 +448,14 @@ export default class via6522 {
 
         // return via frame in debug format
         for (let row = frameStart; row < frameEnd; row++) {
-            text += `Name: ${this.history[row].name}
-Reg: ${this.history[row].regString}
-Base: ${this.history[row].base}
-T1: ${this.history[row].t1}
-T2: ${this.history[row].t2}`;
+            text += `Name:   ${this.history[row].name}
+Base:   0x${Utils.NumberToHex(this.history[row].base)} (${this.history[row].base})
+Reg:    ${this.history[row].regString}
+T1:     ${this.history[row].t1}
+T2:     ${this.history[row].t2}
+L1:     ${this.history[row].l1}
+L2:     ${this.history[row].l2}
+ACR:    ${this.history[row].acrStatus}`;
         }
         return text;
     }
@@ -430,9 +469,12 @@ T2: ${this.history[row].t2}`;
             name: this.name,
             base: this.base,
             reg: this.reg,
-            regString: this.reg.map((r, i) => `${Utils.NumberToHex(i)}:[${Utils.NumberToHex(r)}]` ).join(' '),
+            regString: this.reg.map((r, i) => `${Utils.NumberToHex(r)}` ).join(' '),
             t1: this.getTimer(1),
             t2: this.getTimer(2),
+            l1: this.getReg(Via6522RegisterEnum.R6_T1L_L) + (this.getReg(Via6522RegisterEnum.R7_T1L_H) << 8),
+            l2: this.getReg(Via6522RegisterEnum.R8_T2C_L) + (this.getReg(Via6522RegisterEnum.R9_T2C_H) << 8),
+            acrStatus: this.getAcrStatus(this.getReg(Via6522RegisterEnum.RB_ACR)), 
             acr: acrString,
             pcr: pcrString,
             ifr: ifrString,
@@ -441,9 +483,6 @@ T2: ${this.history[row].t2}`;
         }
         return debug;
     }
-
-
-
 
     /**
      * Reading from memory
