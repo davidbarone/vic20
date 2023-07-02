@@ -98,9 +98,6 @@ import { Via6522RegisterEnum } from "./via_6522_register_enum";
 import { Via6522InterruptFlagRegisterEnum } from "./via_6522_interrupt_flag_register_enum"
 import Via6522DebugInfo  from "./via_6522_debug_info"
 
-type byteBit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-type wordBit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0xA | 0xB | 0xC | 0xD | 0xE | 0xF;
-
 export default class via6522 {
 
     /**
@@ -131,12 +128,7 @@ export default class via6522 {
     // ?read/write 
 
     // Register Mappings
-    private T2L: number = 0;        //  Timer 2 Latch (8-bit - only lower byte used)
-    private T2C: number = 0;        //  Timer 2 Counter Value (16-bit)
     private RUNFL: number = 0;      //  Bit 7: Timer 1 will generate IRQ on underflow. Bit 6: Timer 2 will generate IRQ on underflow (8-bit)
-    private SR: number = 0;         //  Shift Register Value (8-bit)
-    private ACR: number = 0;        //  Auxilliary control register (8-bit)
-    private PCR: number = 0;        //  Peripheral control register (8-bit)
     private PB7: number = 0;        //  Bit 7: pb7 state (8-bit)
     private SRHBITS: number = 0;    //  Number of half-bits to shift out on SR (8-bit)
     private CABSTATE: number = 0;   //  Bit 7: state of CA2 pin. Bit 6: state of CB2 pin. (8-bit)
