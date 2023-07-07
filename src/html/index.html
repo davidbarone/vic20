@@ -231,13 +231,6 @@
           lastInfo = info;
           displayDebug(lastInfo);
 
-          console.log(`Breakpoint: ${breakpointsAddress}`);
-          console.log(`PC: ${info.pc()}`);
-          console.log(typeof info.pc());
-          if (info.pc()===65396){
-            debugger
-          }
-
           // reached a breakpoint?
           if (
             breakpointsAddress.length > 0 &&
