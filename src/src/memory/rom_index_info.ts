@@ -9,9 +9,9 @@ export default interface RomIndexInfo {
     name: string,
 
     /**
-     * Filename of the ROM.
+     * Filename(s) of the ROM. 16K+ cartridges can come in multiple parts
      */
-    fileName: string,
+    fileNames: Array<string>,
 
     /**
      * The type of the ROM
@@ -39,7 +39,7 @@ export default interface RomIndexInfo {
     year?: number
 
     /**
-     * Data for the ROM
+     * Data for the ROM. Can come in multiple parts.
      */
-    data: Uint8Array
+    data: Array<Uint8Array>
 }

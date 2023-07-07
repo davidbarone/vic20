@@ -263,21 +263,21 @@ export class Vic20 {
             if (!romChar) {
                 throw Error("Missing char ROM.");
             }
-            this.Memory.loadData(romChar.data, 0x8000);
+            this.Memory.loadData(romChar.data[0], 0x8000);
             console.log("Loaded char ROM at 0x8000.");
 
             let romBasic = this.roms.roms().find(r => r.fileType == RomFileType.basic && r.region == RomRegion.default);
             if (!romBasic) {
                 throw Error("Missing BASIC ROM.");
             }
-            this.Memory.loadData(romBasic.data, 0xC000);
+            this.Memory.loadData(romBasic.data[0], 0xC000);
             console.log("Loaded BASIC ROM at 0xC000.");
 
             let romKernal = this.roms.roms().find(r => r.fileType == RomFileType.kernal && r.region === ((this.videoRegion === VideoRegion.pal) ? RomRegion.pal : RomRegion.ntsc));
             if (!romKernal) {
                 throw Error("Missing kernal ROM.");
             }
-            this.Memory.loadData(romKernal.data, 0xE000);
+            this.Memory.loadData(romKernal.data[0], 0xE000);
             console.log("Loaded kernal ROM at 0xE000.");
 
             if (this.cartridgeName) {
@@ -287,11 +287,14 @@ export class Vic20 {
                     if (this.roms.isAutoLoad(unpackedCart)) {
                         // cart is autoload type - don't need start address for reset
                         // reset will automatically check A000
-                        this.Memory.loadData(unpackedCart.data, unpackedCart.loadAddress);
+                        unpackedCart.forEach(c => {
+                            this.Memory.loadData(c.data, c.loadAddress);
+                        });
                     } else {
                         // manual load
+                        throw new Error(`Manual load with multiple carts. To do...`);
                         setTimeout(() => {
-                            this.manualloadCart(unpackedCart.data, unpackedCart.loadAddress);
+                            this.manualloadCart(unpackedCart[0].data, unpackedCart[0].loadAddress);
                         }, 5000);
                     }
                 }

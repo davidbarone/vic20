@@ -206,6 +206,7 @@ export default class cpu6502 extends cpu6502Internal {
    * Performs a hard reset.
    */
   public reset(pc: number | null = null, trapPc: number | undefined = undefined): void {
+    console.log('Reset...');
     this.Registers.A = 0;
     this.Registers.X = 0;
     this.Registers.Y = 0;
@@ -334,7 +335,7 @@ export default class cpu6502 extends cpu6502Internal {
       if (this.trapPc && this.Registers.PC === this.lastPc) {
         this.trapHit = true;
         if (this.trapPc === this.Registers.PC) {
-
+          debugger
         } else {
           throw `Actual trap program counter of ${this.Registers.PC} does not match expected trap program counter of ${this.trapPc}.`
         }

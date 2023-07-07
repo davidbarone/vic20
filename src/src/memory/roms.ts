@@ -7,6 +7,7 @@ import RomIndexInfo from "./rom_index_info";
 import { RomRegion } from "./rom_region";
 import jsZip from "jszip";
 import RomStruct from "./rom_struct";
+import Utils from "../lib/utils";
 
 export default class Roms {
 
@@ -15,9 +16,9 @@ export default class Roms {
     private _isValid: boolean = false;
 
     /**
-    * constructor
-    * @param model The memory model (unexpanded, full)
-    */
+     * Constructor.
+     * @param file 
+     */
     public constructor(file: File) {
         this._file = file;
     }
@@ -38,23 +39,43 @@ export default class Roms {
         return this._roms.find(r => r.name.toLowerCase() === name.toLowerCase());
     }
 
+    /**
+     * Gets the roms that are cartridge types.
+     * @returns An array of RomIndexInfo
+     */
     public cartridges(): RomIndexInfo[] {
         return this._roms.filter(r => r.fileType === RomFileType.cartridge);
     }
 
-    public unpack(rom: RomIndexInfo): RomStruct {
-        let loadAddress = rom.data[0] + (rom.data[1] << 8);
-        let data = rom.data.slice(2);   // remove first 2 bytes    
-        return {
-            loadAddress: loadAddress,
-            data: data
-        };
+    public unpack(rom: RomIndexInfo): Array<RomStruct> {
+        debugger
+        let results: Array<RomStruct> = [];
+        for (let i: number = 0; i < rom.fileNames.length; i++) {
+            let part = rom.data[i];
+            let loadAddress = part[0] + (part[1] << 8);
+            console.log(`Unpacking rom: ${rom.name} part #${i}. Load address: 0x${Utils.NumberToHex(loadAddress)}.`)
+            let data = part.slice(2);   // remove first 2 bytes    
+            results.push({
+                loadAddress: loadAddress,
+                data: data
+            })
+        }
+        return results;
     }
 
-    public isAutoLoad(unpacked: RomStruct): boolean {
-        return unpacked.loadAddress === 0xA000;
+    /**
+     * Scans an array of RomStructs, and returns true if any of them have load address of 0xA000.
+     * @param unpacked Array of RomStruct
+     * @returns Returns true if any have a loadAddress = 0xA000.
+     */
+    public isAutoLoad(unpacked: Array<RomStruct>): boolean {
+        return unpacked.some(r=>r.loadAddress===0xA000);
     }
 
+    /**
+     * Validates + processes the roms zip file.
+     * @returns 
+     */
     public async validate(): Promise<boolean> {
 
         return new Promise(async (resolve, reject) => {
@@ -82,11 +103,16 @@ export default class Roms {
 
                 // Finally loop backwards through index - if cannot find rom, remove.
                 for (var i = results.length - 1; i >= 0; i--) {
-                    if (results[i].fileName in romData) {
-                        results[i].data = romData[results[i].fileName];
-                    } else {
-                        results.splice(i, 1);
-                    }
+                    results[i].data = [];
+                    // Each result / index entry can have multiple filenames
+                    results[i].fileNames.forEach(fn => {
+                        if (fn in romData) {
+                            results[i].data.push(romData[fn]);
+                        } else {
+                            console.log(`Unable to add rom: ${results[i].name}. Check files exist.`)
+                            results.splice(i, 1);   // remove the entry
+                        }
+                    });
                 }
 
                 results.sort((a, b) => a.name > b.name ? 1 : -1);
