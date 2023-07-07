@@ -42,6 +42,11 @@
         font-weight: 600;
         width: 80px;
         display: inline-block;
+        vertical-align: top;
+      }
+
+      .field {
+        vertical-align: top;
       }
 
       fieldset label {
@@ -74,6 +79,10 @@
       <div class="field">
         <label>Carts</label>
         <select id="select-cart"></select>
+      </div>
+      <div id="cart-notes-field" class="field" style="display: none;">
+        <label>Notes</label>
+        <div id="cart-notes" style="display: inline-block; width:300px;"></div>
       </div>
       <label>Model</label>
       <select name="expansion" id="expansion">
@@ -182,7 +191,7 @@
       async function getRom(name) {
         let zip = document.getElementById("file-roms").files[0];
         let zipRoms = new roms(zip);
-        let isValid = await zipRoms.validate();
+        let isValid = await zipRoms.process();
         if (isValid) {
           return zipRoms.rom(name);
         }
@@ -190,7 +199,7 @@
 
       function setRoms() {
         let zipRoms = getRoms();
-        zipRoms.validate().then((isValid) => {
+        zipRoms.process().then((isValid) => {
           if (isValid) {
             var options = document.querySelectorAll("#select-cart option");
             options.forEach((o) => o.remove());
@@ -265,7 +274,7 @@
         let model = elModel.value;
         let selectedCart = document.getElementById("select-cart").value;
 
-        zipRoms.validate().then((isValid) => {
+        zipRoms.process().then((isValid) => {
           computer.setConfigMemory(expansion);
           computer.setConfigVideo(model);
           computer.setConfigRoms(zipRoms);
@@ -454,6 +463,16 @@
             elModel.value = rom.region;
           }
           elExpansion.disabled = elModel.disabled = e.target.value;
+
+          // show notes
+          let elCartNotes = document.querySelector("#cart-notes");
+          let elCartNotesField = document.querySelector("#cart-notes-field");
+          elCartNotesField.style.display = rom ? "block" : "none";
+          elCartNotes.innerHTML = `
+          <span style='font-weight: 600; display: inline-block; width: 80px;'>Publisher:</span>${rom.publisher}<br>
+          <span style='font-weight: 600; display: inline-block; width: 80px;'>Year:</span>${rom.year}<br>
+          <span style='font-weight: 600; display: inline-block; width: 80px;'>Status:</span>${rom.status}<br>
+          <span style='font-weight: 600; display: inline-block; width: 80px;'>Comments:</span>${rom.comments}`;
         };
 
         // Load cart

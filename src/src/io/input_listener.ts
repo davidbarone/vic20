@@ -33,7 +33,7 @@ export class inputListener {
         // "this" cannot be used here
 
         document.onkeydown = (e: KeyboardEvent) => {
-            console.log(e);
+            //console.log(e);
             if (inputListener.keyDownHandler) {
                 inputListener.keyDownHandler(e);
             }

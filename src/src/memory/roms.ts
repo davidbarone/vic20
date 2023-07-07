@@ -48,7 +48,6 @@ export default class Roms {
     }
 
     public unpack(rom: RomIndexInfo): Array<RomStruct> {
-        debugger
         let results: Array<RomStruct> = [];
         for (let i: number = 0; i < rom.fileNames.length; i++) {
             let part = rom.data[i];
@@ -76,7 +75,8 @@ export default class Roms {
      * Validates + processes the roms zip file.
      * @returns 
      */
-    public async validate(): Promise<boolean> {
+    public async process(): Promise<boolean> {
+        console.log(`Processing roms file: ${this._file.name}...`)
 
         return new Promise(async (resolve, reject) => {
             let results: RomIndexInfo[] = [];     // index
@@ -130,6 +130,7 @@ export default class Roms {
 
                 this._roms = results;
                 this._isValid = true;
+                console.log(`${this._roms.length} valid rom entries found...`)
                 resolve(true);
             }
         });

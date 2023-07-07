@@ -290,12 +290,13 @@ export class Vic20 {
                         unpackedCart.forEach(c => {
                             this.Memory.loadData(c.data, c.loadAddress);
                         });
-                    } else {
-                        // manual load
-                        throw new Error(`Manual load with multiple carts. To do...`);
+                    } else if (unpackedCart.length == 1) {
+                        // manual load with single part.
                         setTimeout(() => {
                             this.manualloadCart(unpackedCart[0].data, unpackedCart[0].loadAddress);
                         }, 5000);
+                    } else {
+                        throw new Error(`Error! Cannot perform manual load of multi-part rom.`);
                     }
                 }
             }
