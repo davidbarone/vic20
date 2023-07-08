@@ -179,7 +179,7 @@ export class Vic6560 {
             this.vicAltoAudioProcessor.connect(gain);
             this.vicSopranoAudioProcessor.connect(gain);
             gain.connect(this.audioCtx.destination);
-            gain.gain.value = 0.05;
+            gain.gain.value = 0.5;
         });
     }
 

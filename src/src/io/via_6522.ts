@@ -291,13 +291,17 @@ export default class via6522 {
                 this.setTimer(1, t1l);
             } else {
                 this.setTimer(1, 0xffff);
+                this.clearedT1 = false; //disable any further interrupts
             }
         } else {
             //this.setIfr(Via6522InterruptFlagRegisterEnum.R6_T1, false);
         }
 
         if (this.getTimer(2) <= 0) {
-            this.setIfr(Via6522InterruptFlagRegisterEnum.R5_T2, true);
+            if (this.clearedT2) {
+                this.setIfr(Via6522InterruptFlagRegisterEnum.R5_T2, true);
+                this.clearedT2 = false;
+            }
             this.setTimer(2, 0xffff);
         }
 
@@ -617,6 +621,7 @@ IFR/IER:        ${Utils.byteToBinaryString(this.history[row].ifr)}/${Utils.byteT
                 this.setReg(Via6522RegisterEnum.R9_T2C_H, value);
                 this.setReg(Via6522RegisterEnum.R8_T2C_L, this.T2L);
                 this.setIfr(Via6522InterruptFlagRegisterEnum.R5_T2, false);
+                this.clearedT2 = true;
                 break;
             case Via6522RegisterEnum.RA_SR:
                 this.setReg(Via6522RegisterEnum.RA_SR, value);
