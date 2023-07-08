@@ -144,6 +144,12 @@ export default class Memory {
                 for (let i = 0x2000; i <= 0x7FFF; i++) this.writeFunc[i] = this.writeMem;
                 for (let i = 0xA000; i <= 0xBFFF; i++) this.writeFunc[i] = this.writeMem;
             }
+            if (this.expansion === MemoryModel.expanded_35k) {
+                // BLK11,2,3,5, RAM1,2,3
+                for (let i = 0x2000; i <= 0x7FFF; i++) this.writeFunc[i] = this.writeMem;
+                for (let i = 0xA000; i <= 0xBFFF; i++) this.writeFunc[i] = this.writeMem;
+                for (let i = 0x0400; i <= 0x0FFF; i++) this.writeFunc[i] = this.writeMem;  // RAM1,2,3
+            }
         }
 
         this.Reset();

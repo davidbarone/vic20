@@ -235,12 +235,12 @@ export default class via6522 {
 
     private decrementTimer(index: number) {
         let timer = this.getTimer(index);
-        timer--;
+        timer = timer - 1;
         this.setTimer(index, timer);
     }
 
     private getTimer(index: number): number {
-        if (index == 1) {
+        if (index === 1) {
             let t1c = this.getReg(Via6522RegisterEnum.R4_T1C_L) + (this.getReg(Via6522RegisterEnum.R5_T1C_H) << 8);
             return t1c;
         } else {
@@ -618,10 +618,10 @@ IFR/IER:        ${Utils.byteToBinaryString(this.history[row].ifr)}/${Utils.byteT
                 break;
             case Via6522RegisterEnum.R9_T2C_H: // DONE
                 // Write into high-order latch, transfer latches to counter and reset interrupt
+                this.clearedT2 = true;
                 this.setReg(Via6522RegisterEnum.R9_T2C_H, value);
                 this.setReg(Via6522RegisterEnum.R8_T2C_L, this.T2L);
                 this.setIfr(Via6522InterruptFlagRegisterEnum.R5_T2, false);
-                this.clearedT2 = true;
                 break;
             case Via6522RegisterEnum.RA_SR:
                 this.setReg(Via6522RegisterEnum.RA_SR, value);
