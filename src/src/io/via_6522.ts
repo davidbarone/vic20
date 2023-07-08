@@ -145,6 +145,50 @@ export default class via6522 {
 
     private debug: boolean = false;
 
+    private debugLatchingStatuses: string[] = [
+        'Latching disabled',
+        'Latching enabled'
+    ]
+
+    private debugSRStatuses: string[] = [
+        'Disabled',
+        'Shift in T2',
+        'Shift in phi02',
+        'Shift in external clock',
+        'Shift out free run T2',
+        'Shift out T2',
+        'Shift out phi02',
+        'Shift out external clock'
+    ]
+
+    private debugT2Statuses: string[] = [
+        'Timed interrupt',
+        'Countdown with pulse on PB6'
+    ]
+
+    private debugT1Statuses: string[] = [
+        'Timed on T1 load (PB7 disabled)',
+        'Continous (PB7 disabled)',
+        'Timed on T1 load (PB7 1-shot output)',
+        'Continous (PB7 sine wave output)'
+    ]
+
+    private debugCA1CB1InterruptControl: string[] = [
+        'Negative Active Edge',
+        'Positive Active Edge'
+    ]
+
+    private debugCA2CB2Control: string[] = [
+        'Input-negative active edge',
+        'Independent interrupt input-negative edge',
+        'Input-positive active edge',
+        'Independent interrupt input-positive edge',
+        'Handshake output',
+        'Pulse output',
+        'Low output',
+        'High output'
+    ]
+
     public constructor(name: string, memory: Memory, offset: number) {
         this.name = name;
         this.base = offset;
@@ -268,8 +312,6 @@ export default class via6522 {
             if (this.history.length > this.historySize) {
                 this.history.shift();
             }
-
-            console.log(info.complete);
         }
     }
 
@@ -381,46 +423,6 @@ export default class via6522 {
         }
     }
 
-    private getAcrStatus(ACR: number): string {
-        ACR = ACR & 0xff;
-        var pa = Utils.ExtractBits(ACR, 0, 0);
-        var pb = Utils.ExtractBits(ACR, 1, 1);
-        var sr = Utils.ExtractBits(ACR, 2, 4);
-        var t2 = Utils.ExtractBits(ACR, 5, 5);
-        var t1 = Utils.ExtractBits(ACR, 6, 7);
-
-        const latchingStatuses: string[] = [
-            'off',
-            'on'
-        ]
-
-        const SRStatuses: string[] = [
-            'Disabled',
-            'S/in T2',
-            'S/in phi02',
-            'S/in ext clk',
-            'S/out F/run T2',
-            'S/out T2',
-            'S/out phi02',
-            'S/out ext clk'
-        ]
-
-        const T2Statuses: string[] = [
-            'Timed',
-            'Pulse PB6'
-        ]
-
-        const T1Statuses: string[] = [
-            'Timed (PB7 off)',
-            'Cont. (PB7 off)',
-            'Timed (PB7 1-shot)',
-            'Cont. (PB7 s/wave)'
-        ]
-
-        return `T1:[${T1Statuses[t1]}] T2:[${T2Statuses[t2]}] SR:[${SRStatuses[sr]}] PA:[${latchingStatuses[pa]}] PB:[${latchingStatuses[pb]}]`
-    }
-
-
     /**
       * Gets last n instructions executed
       * @param history Number of instructions, n, to keep in history. Can be between 1 and historyMaxSize
@@ -440,38 +442,54 @@ export default class via6522 {
 
         // return via frame in debug format
         for (let row = frameStart; row < frameEnd; row++) {
-            text += `Name:   ${this.history[row].name}
-Base:   0x${Utils.NumberToHex(this.history[row].base)} (${this.history[row].base})
-Reg:    ${this.history[row].regString}
-T1:     ${this.history[row].t1}
-T2:     ${this.history[row].t2}
-L1:     ${this.history[row].l1}
-L2:     ${this.history[row].l2}
-ACR:    ${this.history[row].acrStatus}`;
+            text += `ORB/DDRB:       ${Utils.byteToBinaryString(this.history[row].orb)}/${Utils.byteToBinaryString(this.history[row].ddrb)} 
+ORA/DDRA:       ${Utils.byteToBinaryString(this.history[row].ora)}/${Utils.byteToBinaryString(this.history[row].ddra)}
+T1C/T1L:        ${Utils.NumberToHex(this.history[row].t1c)}/${Utils.NumberToHex(this.history[row].t1l)}
+T2C/T2L:        ${Utils.NumberToHex(this.history[row].t2c)}/${Utils.NumberToHex(this.history[row].t2l)}
+SR:             ${Utils.NumberToHex(this.history[row].sr)}
+ACR/PCR:        ${Utils.byteToBinaryString(this.history[row].acr)}/${Utils.byteToBinaryString(this.history[row].pcr)}
+ACR-T1 Control: ${this.history[row].acrT1Status}
+ACR-T2 Control: ${this.history[row].acrT2Status}
+ACR-SR Control: ${this.history[row].acrSRStatus}
+ACR-PA Latch:   ${this.history[row].acrPAStatus}
+ACR-PB Latch:   ${this.history[row].acrPBStatus}
+PCR-CB1         ${this.history[row].pcrCB1Status}
+PCR-CB2         ${this.history[row].pcrCB2Status}
+PCR-CA1         ${this.history[row].pcrCA1Status}
+PCR-CA2         ${this.history[row].pcrCA2Status}
+IFR/IER:        ${Utils.byteToBinaryString(this.history[row].ifr)}/${Utils.byteToBinaryString(this.history[row].ier)}`;
         }
         return text;
     }
 
     private getDebugInfo(): Via6522DebugInfo {
-        let acrString: string = Utils.byteToBinaryString(this.getReg(Via6522RegisterEnum.RB_ACR));
-        let pcrString: string = Utils.byteToBinaryString(this.getReg(Via6522RegisterEnum.RC_PCR));
-        let ifrString: string = Utils.byteToBinaryString(this.getReg(Via6522RegisterEnum.RD_IFR));
-        let ierString: string = Utils.byteToBinaryString(this.getReg(Via6522RegisterEnum.RE_IER));
         let debug: Via6522DebugInfo = {
             name: this.name,
             base: this.base,
             reg: this.reg,
             regString: this.reg.map((r, i) => `${Utils.NumberToHex(r)}` ).join(' '),
-            t1: this.getTimer(1),
-            t2: this.getTimer(2),
-            l1: this.getReg(Via6522RegisterEnum.R6_T1L_L) + (this.getReg(Via6522RegisterEnum.R7_T1L_H) << 8),
-            l2: this.getReg(Via6522RegisterEnum.R8_T2C_L) + (this.getReg(Via6522RegisterEnum.R9_T2C_H) << 8),
-            acrStatus: this.getAcrStatus(this.getReg(Via6522RegisterEnum.RB_ACR)), 
-            acr: acrString,
-            pcr: pcrString,
-            ifr: ifrString,
-            ier: ierString,
-            complete: `${this.name}: ACR[${acrString}] PCR[${pcrString}] IFR[${ifrString}] IER[${ierString}] ${this.reg[0xD]} ${this.reg[0xE]}`
+            t1c: this.getTimer(1),
+            t2c: this.getTimer(2),
+            t1l: this.getReg(Via6522RegisterEnum.R6_T1L_L) + (this.getReg(Via6522RegisterEnum.R7_T1L_H) << 8),
+            t2l: this.getReg(Via6522RegisterEnum.R8_T2C_L),
+            acr: this.getReg(Via6522RegisterEnum.RB_ACR),
+            acrT1Status: this.debugT1Statuses[Utils.ExtractBits(this.getReg(Via6522RegisterEnum.RB_ACR), 6, 7)],
+            acrT2Status: this.debugT2Statuses[Utils.ExtractBits(this.getReg(Via6522RegisterEnum.RB_ACR), 5, 5)],
+            acrSRStatus: this.debugSRStatuses[Utils.ExtractBits(this.getReg(Via6522RegisterEnum.RB_ACR), 2, 4)],
+            acrPBStatus: this.debugLatchingStatuses[Utils.ExtractBits(this.getReg(Via6522RegisterEnum.RB_ACR), 1, 1)],
+            acrPAStatus: this.debugLatchingStatuses[Utils.ExtractBits(this.getReg(Via6522RegisterEnum.RB_ACR), 0, 0)],
+            pcr: this.getReg(Via6522RegisterEnum.RC_PCR),
+            sr: this.getReg(Via6522RegisterEnum.RA_SR),
+            pcrCB2Status: this.debugCA2CB2Control[Utils.ExtractBits(this.getReg(Via6522RegisterEnum.RC_PCR), 5, 7)],
+            pcrCB1Status: this.debugCA1CB1InterruptControl[Utils.ExtractBits(this.getReg(Via6522RegisterEnum.RC_PCR), 4, 4)],
+            pcrCA2Status: this.debugCA2CB2Control[Utils.ExtractBits(this.getReg(Via6522RegisterEnum.RC_PCR), 1, 3)],
+            pcrCA1Status: this.debugCA1CB1InterruptControl[Utils.ExtractBits(this.getReg(Via6522RegisterEnum.RC_PCR), 0, 0)],
+            ifr: this.getReg(Via6522RegisterEnum.RD_IFR),
+            ier: this.getReg(Via6522RegisterEnum.RE_IER),
+            ora: this.getReg(Via6522RegisterEnum.R1_ORA_IRA),
+            orb: this.getReg(Via6522RegisterEnum.R0_ORB_IRB),
+            ddra: this.getReg(Via6522RegisterEnum.R3_DDRA),
+            ddrb: this.getReg(Via6522RegisterEnum.R2_DDRB),
         }
         return debug;
     }
