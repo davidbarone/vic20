@@ -372,8 +372,8 @@ export default class via6522 {
         //ifr = ifr & (this.clearedT2 ? 0xFF : ~0x20);
         // Bit 7 is always set to 1,so we ignore
         let result: boolean = ((ifr & ier & 0x7F) > 0);
-        //if (ifr & ier & 0x7F & 0x40) this.clearedT1 = false;
-        //if (ifr & ier & 0x7F & 0x20) this.clearedT2 = false;
+        if (ifr & ier & 0x7F & 0x40) this.clearedT1 = false;
+        if (ifr & ier & 0x7F & 0x20) this.clearedT2 = false;
         return result;
     }
 
