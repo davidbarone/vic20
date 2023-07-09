@@ -89,6 +89,7 @@ export class Vic6560 {
     vicBassAudioProcessor: AudioWorkletNode | null = null;
     vicAltoAudioProcessor: AudioWorkletNode | null = null;
     vicSopranoAudioProcessor: AudioWorkletNode | null = null;
+    vicNoiseAudioProcessor: AudioWorkletNode | null = null;
     scriptUrl: string = URL.createObjectURL(new Blob([
         '(',
         fnVic20Processor.toString(),
@@ -174,10 +175,15 @@ export class Vic6560 {
                 numberOfOutputs: 1,
                 outputChannelCount: [1]
             });
+            this.vicNoiseAudioProcessor = new AudioWorkletNode(this.audioCtx, 'vic20-processor', {
+                numberOfOutputs: 1,
+                outputChannelCount: [1]
+            });
             var gain = this.audioCtx.createGain();
             this.vicBassAudioProcessor.connect(gain);
             this.vicAltoAudioProcessor.connect(gain);
             this.vicSopranoAudioProcessor.connect(gain);
+            this.vicNoiseAudioProcessor.connect(gain);
             gain.connect(this.audioCtx.destination);
             gain.gain.value = 0.5;
         });
@@ -209,8 +215,8 @@ Character Memory Location:  ${this.vicControlRegisters.MapMemory(this.vicControl
 Color Base:                 ${this.vicControlRegisters.MapMemory(this.vicControlRegisters.ColorBase)}
 Light Pen (X,Y):            ${this.vicControlRegisters.LightPenX}, ${this.vicControlRegisters.LightPenY}
 Paddle (X,Y):               ${this.vicControlRegisters.PaddleX}, ${this.vicControlRegisters.PaddleY}
-Sounds Channels:            Base(${this.vicControlRegisters.BassSwitch}),Alto(${this.vicControlRegisters.AltoSwitch}),Soprano(${this.vicControlRegisters.SopranoSwitch}),Noise(${this.vicControlRegisters.NoiseSwitch})
-Sound Frequencies:          Base(${this.vicControlRegisters.BassFrequency}),Alto(${this.vicControlRegisters.AltoFrequency}),Soprano(${this.vicControlRegisters.SopranoFrequency}),Noise(${this.vicControlRegisters.NoiseFrequency})
+Sounds Channels:            Bass(${this.vicControlRegisters.BassSwitch}),Alto(${this.vicControlRegisters.AltoSwitch}),Soprano(${this.vicControlRegisters.SopranoSwitch}),Noise(${this.vicControlRegisters.NoiseSwitch})
+Sound Frequencies:          Bass(${this.vicControlRegisters.BassFrequency}),Alto(${this.vicControlRegisters.AltoFrequency}),Soprano(${this.vicControlRegisters.SopranoFrequency}),Noise(${this.vicControlRegisters.NoiseFrequency})
 Volume:                     ${this.vicControlRegisters.VolumeControl}
 Colors:                     Auxilliary(${this.vicControlRegisters.AuxilliaryColour}),Screen(${this.vicControlRegisters.ScreenColour}),Border(${this.vicControlRegisters.BorderColour})
 Reverse Color Mode:         ${this.vicControlRegisters.ReverseMode}
@@ -361,35 +367,34 @@ Interlaced Mode:            ${this.vicControlRegisters.InterlacedMode}`
         if (this.vicBassAudioProcessor != null) {
             const freq = this.vicBassAudioProcessor.parameters.get('Frequency')!;
             const enabled = this.vicBassAudioProcessor.parameters.get('Switch')!;
-            const f = this.phi2 / (256 * (127 - this.vicControlRegisters.BassFrequency));
-            if (isFinite(f)) {
-                const fBass = this.phi2 / (256 * (127 - this.vicControlRegisters.BassFrequency));
-                const sBass = this.vicControlRegisters.BassSwitch ? 1 : 0;
-                freq.value = fBass;
-                enabled.value = sBass;
-            }
+            const fBass = Math.round(this.phi2 / (256 * (127 - this.vicControlRegisters.BassFrequency)));
+            const sBass = this.vicControlRegisters.BassSwitch ? 1 : 0;
+            if (isFinite(fBass)) freq.value = fBass;
+            enabled.value = sBass;
         }
         if (this.vicAltoAudioProcessor != null) {
             const freq = this.vicAltoAudioProcessor.parameters.get('Frequency')!;
             const enabled = this.vicAltoAudioProcessor.parameters.get('Switch')!;
-            const f = this.phi2 / (128 * (127 - this.vicControlRegisters.AltoFrequency));
-            if (isFinite(f)) {
-                const fAlto = this.phi2 / (128 * (127 - this.vicControlRegisters.AltoFrequency));
-                const sAlto = this.vicControlRegisters.AltoSwitch ? 1 : 0;
-                freq.value = fAlto;
-                enabled.value = sAlto;
-            }
+            const fAlto = Math.round(this.phi2 / (128 * (127 - this.vicControlRegisters.AltoFrequency)));
+            const sAlto = this.vicControlRegisters.AltoSwitch ? 1 : 0;
+            if (isFinite(fAlto)) freq.value = fAlto;
+            enabled.value = sAlto;
         }
         if (this.vicSopranoAudioProcessor != null) {
             const freq = this.vicSopranoAudioProcessor.parameters.get('Frequency')!;
             const enabled = this.vicSopranoAudioProcessor.parameters.get('Switch')!;
-            const f = this.phi2 / (128 * (127 - this.vicControlRegisters.SopranoFrequency));
-            if (isFinite(f)) {
-                const fSoprano = this.phi2 / (128 * (127 - this.vicControlRegisters.SopranoFrequency));
-                const sSoprano = this.vicControlRegisters.SopranoSwitch ? 1 : 0;
-                freq.value = fSoprano;
-                enabled.value = sSoprano;
-            }
+            const fSoprano = Math.round(this.phi2 / (64 * (127 - this.vicControlRegisters.SopranoFrequency)));
+            const sSoprano = this.vicControlRegisters.SopranoSwitch ? 1 : 0;
+            if (isFinite(fSoprano)) freq.value = fSoprano;
+            enabled.value = sSoprano;
+        }
+        if (this.vicNoiseAudioProcessor != null) {
+            const freq = this.vicNoiseAudioProcessor.parameters.get('Frequency')!;
+            const enabled = this.vicNoiseAudioProcessor.parameters.get('Switch')!;
+            const fNoise = Math.round(this.phi2 / (32 * (127 - this.vicControlRegisters.NoiseFrequency)));
+            const sNoise = this.vicControlRegisters.NoiseSwitch ? 1 : 0;
+            if (isFinite(fNoise)) freq.value = fNoise;
+            enabled.value = sNoise;
         }
     }
 
