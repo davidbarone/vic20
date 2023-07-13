@@ -205,6 +205,10 @@ export class Vic6560 {
         }
     }
 
+    public reset(): void {
+        this.audioCtx.close();
+    }
+
     public getDebug(): string {
         return `Screen Origin (X,Y):        ${this.vicControlRegisters.ScreenOriginX}, ${this.vicControlRegisters.ScreenOriginY}
 Video Columns, Rows:        ${this.vicControlRegisters.NumberOfVideoColumns}, ${this.vicControlRegisters.NumberOfVideoRows}

@@ -242,6 +242,7 @@ export class Vic20 {
         clearInterval(this.timeoutId);
         this.Memory = new Memory(this.expansion);
         this.Cpu = new cpu6502(this.Memory);
+        this.Vic6560.reset();
         this.Vic6560 = new Vic6560(this.videoRegion, this.Memory, this.canvas, 0x9000);
         this.via1 = new via6522("VIA1", this.Memory, 0x9110);   // nmi
         this.via2 = new via6522("VIA2", this.Memory, 0x9120);   // irq
