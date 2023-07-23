@@ -88,8 +88,6 @@
  * CB1 Control / CA1 Control (latch/interrupt control)
  * - 0:     Negative active edge
  * - 1:     Positive active edge
- 
-
 */
 
 import Utils from "../lib/utils";
@@ -136,8 +134,8 @@ export default class via6522 {
     private CABSTATE: number = 0;   //  Bit 7: state of CA2 pin. Bit 6: state of CB2 pin. (8-bit)
     private ILA: number = 0;        //  Port A input latch (see ACR bit 0) (8 bit)
     private ILB: number = 0;        //  Port B input latch (see ACR bit 1) (8 bit)
-    private clearedT1: boolean = false;
-    private clearedT2: boolean = false;
+    private inhibitT1: boolean = true;
+    private inhibitT2: boolean = true;
 
     private lastCA1: boolean = true;
     private CA1: boolean = true;
@@ -170,9 +168,9 @@ export default class via6522 {
 
     private debugT1Statuses: string[] = [
         'Timed on T1 load (PB7 disabled)',
-        'Continous (PB7 disabled)',
+        'Continuous (PB7 disabled)',
         'Timed on T1 load (PB7 1-shot output)',
-        'Continous (PB7 sine wave output)'
+        'Continuous (PB7 sine wave output)'
     ]
 
     private debugCA1CB1InterruptControl: string[] = [
@@ -230,8 +228,8 @@ export default class via6522 {
         }
 
         // Timers, SR, and interrupt logic are disabled
-        this.clearedT1 = true;
-        this.clearedT2 = true;
+        this.inhibitT1 = true;
+        this.inhibitT2 = true;
     }
 
     private decrementTimer(index: number) {
@@ -284,26 +282,26 @@ export default class via6522 {
             // this.setIfr(1, true);
             this.setIfr(Via6522InterruptFlagRegisterEnum.R6_T1, true);
             this.PB7 = 1;
-            this.clearedT1 = false;
+            //this.clearedT1 = false;
 
             // if set to continuous interrupts, set clearedT1 = true
             if (Utils.ExtractBits(this.getReg(Via6522RegisterEnum.RB_ACR), 6, 6) == 1) {
-                this.clearedT1 = true;  // continuous mode
+                this.inhibitT1 = false;  // continuous mode
                 const t1l = this.getReg(Via6522RegisterEnum.R6_T1L_L) + (this.getReg(Via6522RegisterEnum.R7_T1L_H) << 8)
                 // copy latch->counter
                 this.setTimer(1, t1l);
             } else {
                 this.setTimer(1, 0xffff);
-                this.clearedT1 = false; //disable any further interrupts
+                this.inhibitT1 = true; //disable any further interrupts
             }
         } else {
             //this.setIfr(Via6522InterruptFlagRegisterEnum.R6_T1, false);
         }
 
         if (this.getTimer(2) <= 0) {
-            if (this.clearedT2) {
+            if (!this.inhibitT2) {
                 this.setIfr(Via6522InterruptFlagRegisterEnum.R5_T2, true);
-                this.clearedT2 = false;
+                //this.clearedT2 = false;
             }
             this.setTimer(2, 0xffff);
         }
@@ -367,13 +365,19 @@ export default class via6522 {
         let ifr = this.getReg(Via6522RegisterEnum.RD_IFR);
         const ier = this.getReg(Via6522RegisterEnum.RE_IER);
         // T1 interrupt can only be set if clearedT1 = true
-        ifr = ifr & (this.clearedT1 ? 0xFF : ~0x40);
+        ifr = ifr & (this.inhibitT1 ? ~0x40: 0xFF);
         // T2 interrupt can only be set if clearedT2 = true
-        //ifr = ifr & (this.clearedT2 ? 0xFF : ~0x20);
+        ifr = ifr & (this.inhibitT2 ? ~0x20 : 0xFF);
         // Bit 7 is always set to 1,so we ignore
         let result: boolean = ((ifr & ier & 0x7F) > 0);
-        if (ifr & ier & 0x7F & 0x40) this.clearedT1 = false;
-        if (ifr & ier & 0x7F & 0x20) this.clearedT2 = false;
+        if (ifr & ier & 0x7F & 0x40) {
+            this.inhibitT1 = false;
+            this.setIfr(Via6522InterruptFlagRegisterEnum.R6_T1, false);
+        }
+        if (ifr & ier & 0x7F & 0x20) {
+            this.inhibitT2 = false;
+            this.setIfr(Via6522InterruptFlagRegisterEnum.R5_T2, false);
+        }
         return result;
     }
 
@@ -548,7 +552,7 @@ IFR/IER:        ${Utils.byteToBinaryString(this.history[row].ifr)}/${Utils.byteT
                 return this.getReg(Via6522RegisterEnum.R7_T1L_H);
             case Via6522RegisterEnum.R8_T2C_L:   // DONE
                 // Read from low-order counter and reset interrupt
-                this.clearedT2 = true;
+                this.inhibitT2 = false;
                 this.setIfr(Via6522InterruptFlagRegisterEnum.R5_T2, false);
                 return (this.getReg(Via6522RegisterEnum.R8_T2C_L));
             case Via6522RegisterEnum.R9_T2C_H:   // DONE
@@ -607,7 +611,7 @@ IFR/IER:        ${Utils.byteToBinaryString(this.history[row].ifr)}/${Utils.byteT
                 this.setReg(Via6522RegisterEnum.R4_T1C_L, this.getReg(Via6522RegisterEnum.R6_T1L_L));
                 this.setReg(Via6522RegisterEnum.R5_T1C_H, this.getReg(Via6522RegisterEnum.R7_T1L_H));
                 this.setIfr(Via6522InterruptFlagRegisterEnum.R6_T1, false)
-                this.clearedT1 = true;  // T1 reset
+                this.inhibitT1 = false;  // T1 reset
                 break;
             case Via6522RegisterEnum.R6_T1L_L: // DONE
                 // Write into low-order latch
@@ -617,7 +621,7 @@ IFR/IER:        ${Utils.byteToBinaryString(this.history[row].ifr)}/${Utils.byteT
                 // Write into high-order latch. No latch->counter transfer takes place.
                 this.setReg(Via6522RegisterEnum.R7_T1L_H, value);
                 this.setIfr(Via6522InterruptFlagRegisterEnum.R6_T1, false)
-                this.clearedT1 = true;  // T1 reset
+                this.inhibitT1 = false;  // T1 reset
                 break;
             case Via6522RegisterEnum.R8_T2C_L: // DONE
                 // Write into low-order latch
@@ -626,11 +630,11 @@ IFR/IER:        ${Utils.byteToBinaryString(this.history[row].ifr)}/${Utils.byteT
                 break;
             case Via6522RegisterEnum.R9_T2C_H: // DONE
                 // Write into high-order latch, transfer latches to counter and reset interrupt
-                this.clearedT2 = true;
+                this.inhibitT2 = false;
                 this.setReg(Via6522RegisterEnum.R9_T2C_H, value);
                 this.setReg(Via6522RegisterEnum.R8_T2C_L, this.T2L_L);
                 this.setIfr(Via6522InterruptFlagRegisterEnum.R5_T2, false);
-                this.T2C = (value << 8) + this.T2L_L; 
+                this.T2C = (value << 8) + this.T2L_L;
                 break;
             case Via6522RegisterEnum.RA_SR:
                 this.setReg(Via6522RegisterEnum.RA_SR, value);
