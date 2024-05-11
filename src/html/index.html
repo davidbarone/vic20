@@ -80,9 +80,9 @@
         <label>Carts</label>
         <select id="select-cart"></select>
       </div>
-      <div id="cart-notes-field" class="field" style="display: none;">
+      <div id="cart-notes-field" class="field" style="display: none">
         <label>Notes</label>
-        <div id="cart-notes" style="display: inline-block; width:300px;"></div>
+        <div id="cart-notes" style="display: inline-block; width: 300px"></div>
       </div>
       <label>Model</label>
       <select name="expansion" id="expansion">
@@ -182,6 +182,24 @@
         return false;
       };
 
+      function toggleConfigurationPanel() {
+        let elConfigureButton = document.querySelector("#configure");
+        let elConfigurePanel = document.querySelector("#configure-panel");
+        if (elConfigureButton.innerText == "show") {
+          elConfigureButton.innerText = "hide";
+          elConfigurePanel.style.display = "block";
+        } else {
+          elConfigureButton.innerText = "show";
+          elConfigurePanel.style.display = "none";
+        }
+        return false;
+      }
+
+      // Gets the default Roms from the server.
+      function getDefaultRoms() {
+
+      }
+
       function getRoms() {
         let zip = document.getElementById("file-roms").files[0];
         let zipRoms = new roms(zip);
@@ -236,7 +254,7 @@
             breakpointsAddress.length > 0 &&
             breakpointsAddress.includes(info.pc())
           ) {
-            debugger
+            debugger;
             this.toggleDebugButtons(false);
             computer.stop();
           }
@@ -295,16 +313,7 @@
       // Bootstrap code
       function ready(fn) {
         document.querySelector("#configure").onclick = (e) => {
-          let elConfigureButton = document.querySelector("#configure");
-          let elConfigurePanel = document.querySelector("#configure-panel");
-          if (elConfigureButton.innerText == "show") {
-            elConfigureButton.innerText = "hide";
-            elConfigurePanel.style.display = "block";
-          } else {
-            elConfigureButton.innerText = "show";
-            elConfigurePanel.style.display = "none";
-          }
-          return false;
+          toggleConfigurationPanel();
         };
 
         // Reset handler
@@ -386,6 +395,9 @@
         } else {
           document.addEventListener("DOMContentLoaded", fn);
         }
+
+        // Open the configuration panel
+        toggleConfigurationPanel();
       }
 
       displayDebug = (info) => {

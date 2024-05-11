@@ -108,7 +108,10 @@ MOS 6502 cpu:
 -------------
 - 6502 Instruction Set Decoded: http://nparker.llx.com/a2/opcodes.html
 - NMOS 6502 OpCodes: http://www.6502.org/tutorials/6502opcodes.html
-- 
+
+Communities:
+------------
+- https://sleepingelephant.com/denial/
 
 ## Vic20 Features
 
@@ -118,7 +121,8 @@ The following features are available at the moment:
 - Vic6560/6561 emulation
   - PAL/NTSC support
   - Sound (bass,alto,soprano channels currently)
-- Via6522 emulation
+- Basic Via6522 emulation
+  - Timer + interrupts (though bit buggy)
 - Multiple memory models (unexpanded, 3K, 8K, 16K, 24K, 32K)
 - Debugging
   - Breakpoints
@@ -130,12 +134,12 @@ The following features are available at the moment:
     - Call stack
 
 ## ToDo List
-
-The following are still being worked on and are not available yet:
+- Fix up timing issues with Timer / VIA6522
+- Fix multichannel audio processing
 - Cassette / tape loading and saving
+- Additional file formats (e.g. D64 format)
 - Unsupported CPU instructions (as used by some games)
 - Fixing up issues with some of the games
-- Timing issues with VIA6522
 
 ## Screenshots
 
