@@ -68,7 +68,7 @@ export default class Roms {
      * @returns Returns true if any have a loadAddress = 0xA000.
      */
     public isAutoLoad(unpacked: Array<RomStruct>): boolean {
-        return unpacked.some(r=>r.loadAddress===0xA000);
+        return unpacked.some(r => r.loadAddress === 0xA000);
     }
 
     /**
@@ -76,17 +76,17 @@ export default class Roms {
      * @returns 
      */
     public async process(): Promise<boolean> {
-        console.log(`Processing roms file: ${this._file.name}...`)
 
         return new Promise(async (resolve, reject) => {
             let results: RomIndexInfo[] = [];     // index
             let romData: any = {};             // contents of all roms
 
             if (!this._file) {
+                console.log('No roms set....')
                 this._isValid = false;
                 resolve(false);
             } else {
-
+                console.log(`Processing roms file: ${this._file.name}...`)
                 let zipFileData = await this.readFileBinary(this._file);
                 let zip = await jsZip.loadAsync(zipFileData);
 
